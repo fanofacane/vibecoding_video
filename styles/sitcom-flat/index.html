@@ -1,0 +1,51 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Sitcom flat studio</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@500;800;900&display=block">
+<style>
+  html, body { margin: 0; background: #1b1820; color: #eee; font: 13px system-ui, sans-serif; }
+  main { padding: 12px; display: grid; gap: 8px; }
+  #out { width: min(100%, 1280px); aspect-ratio: 16 / 9; height: auto; }
+  .bar { display: flex; gap: 10px; align-items: center; max-width: 1280px; }
+  #scrub { flex: 1; }
+</style>
+</head>
+<body>
+<main>
+  <canvas id="out" width="1920" height="1080"></canvas>
+  <div class="bar"><input id="scrub" type="range" min="0" max="13" step="0.0417" value="0"><span id="tt">loading…</span></div>
+</main>
+<script src="src/engine.js"></script>
+<script src="src/logos.js"></script>
+<script src="src/cast.js"></script>
+<script src="src/scenes.js"></script>
+<script>
+// Page runtime: renderAt(t) for the renderer, a time slider for manual preview.
+ctx = document.getElementById('out').getContext('2d');
+function drawAt(t) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.filter = 'none';
+  const sc = TIMELINE.find(s => t >= s[0] && t < s[1]) || TIMELINE[TIMELINE.length - 1];
+  sc[2](t, t - sc[0]);
+}
+window.renderAt = async (t, type = 'image/png', q = .92) => { drawAt(t); return ctx.canvas.toDataURL(type, q); };
+window.renderSheet = async (times, cols = 3, w = 640) => {
+  const h = Math.round(w * 9 / 16), sc = document.createElement('canvas'); sc.width = cols * w; sc.height = Math.ceil(times.length / cols) * h;
+  const c = sc.getContext('2d');
+  times.forEach((t, i) => { drawAt(t); const x = (i % cols) * w, y = Math.floor(i / cols) * h; c.drawImage(ctx.canvas, x, y, w, h);
+    c.fillStyle = 'rgba(0,0,0,.65)'; c.fillRect(x, y, 90, 26); c.fillStyle = '#fff'; c.font = '16px sans-serif'; c.fillText(t.toFixed(2) + 's', x + 6, y + 18); });
+  return sc.toDataURL('image/jpeg', .9);
+};
+// Load every glyph the scenes use (Noto Sans SC is split into unicode-range subsets).
+const GLYPHS = TITLE + CAST.map(c => c.name + c.tag.join('')).join('') + '这标题不对改改对对对！皇上圣明臣妾这就全部重做今日已重做×0123456789,，';
+Promise.all([900, 800].map(w => document.fonts.load(`${w} 60px "Noto Sans SC"`, GLYPHS))).then(() => {
+  window.ready = true;
+  if (location.search.includes('render')) return;
+  const s = document.getElementById('scrub'), lab = document.getElementById('tt');
+  s.max = DUR; const go = () => { drawAt(+s.value); lab.textContent = (+s.value).toFixed(2) + 's'; };
+  s.addEventListener('input', go); go();
+});
+</script>
+</body>
+</html>
