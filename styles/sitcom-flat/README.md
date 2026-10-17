@@ -1,6 +1,6 @@
 # 情景喜剧扁平风
 
-风格标识：`sitcom-flat`。参照《爱情公寓》式青春情景喜剧片头的扁平卡通画面，适合“AI 群像”类短视频。当前示例为《AI 甄嬛传》第一集《朕只是想改个标题》，时长 95.5 秒，1920 × 1080，30 fps，配乐为《爱情公寓 2》片头曲。
+风格标识：`sitcom-flat`。参照《爱情公寓》式青春情景喜剧片头的扁平卡通画面，适合“AI 群像”类短视频。当前示例为《AI 甄嬛传》第一集《朕只是想改个标题》，时长 92.45 秒，1920 × 1080，30 fps，配乐为《爱情公寓 2》片头曲。
 
 ![关键帧](preview/keyframes.jpg)
 
@@ -32,11 +32,13 @@
 npm ci
 node render.mjs --sheet=7.5,16.5,25.5,47 --out=out/check.jpg              # 关键帧拼图
 node render.mjs --stills=25.5 --out=out/stills                              # 全分辨率静帧
-node render.mjs --clip=0:95.48 --audio=assets/music.m4a --out=out/ep01.mp4  # 成片
+node render.mjs --clip=0:92.45 --audio=assets/music.m4a --out=out/ep01.mp4  # 成片
 ```
 
 默认浏览器为 `C:/Program Files/Google/Chrome/Application/chrome.exe`，其他位置用 `--chrome=<路径>`。Linux 容器中以 root 运行时加 `--no-sandbox`。字体 Noto Sans SC 从 Google Fonts 加载，需要网络；设置了 `HTTPS_PROXY` 时 Chrome 会走该代理。
 
-配乐 `assets/music.m4a` 是从用户提供的视频中提取的音轨，未提交 Git；用 `ffmpeg -i <视频> -vn -c:a copy assets/music.m4a` 重新提取。
+配乐 `assets/music.m4a` 是从用户提供的视频中提取的音轨，未提交 Git；用 `ffmpeg -i <视频> -vn -t 92.45 -af afade=t=out:st=91.95:d=0.5 -c:a aac -b:a 192k assets/music.m4a` 重新提取（截到歌曲结束，去掉片尾水印语音）。
+
+节奏：歌曲约 159 BPM，人声在 5.88 秒的正拍进入，每句歌词 2 小节（约 3.02 秒）。`scenes.js` 中所有转场落在句首 `P(n)`，消息出现时间吸附到节拍。
 
 每帧只由时间 `t` 决定，不依赖上一帧，也不使用 `Math.random()`。

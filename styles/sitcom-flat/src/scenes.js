@@ -1,8 +1,13 @@
-// scenes.js: AI 甄嬛传 第一集《朕只是想改个标题》. Cut points follow the music (爱情公寓 2 opening, ~127 BPM).
+// scenes.js: AI 甄嬛传 第一集《朕只是想改个标题》. Cuts sit on the song's lyric phrases.
+// Music: ~159 BPM; vocals enter on the downbeat at 5.88 s; each lyric line is 2 bars (8 beats ≈ 3.02 s).
 
 const TITLE = 'AI 甄嬛传';
 const EPISODE = '第一集 · 朕只是想改个标题';
-const BPM = 127.5, BEAT = 60 / BPM, BEAT0 = .07;
+const BEAT = .37775, VOX = 5.88, PHRASE = 8 * BEAT;
+const BEAT0 = VOX;
+const P = n => +(VOX + n * PHRASE).toFixed(3);          // start of lyric phrase n (n = 0 is the first sung line)
+const onBeat = k => VOX - k * BEAT;                       // k beats before the vocals come in
+const snap = x => Math.max(.2, Math.round(x / BEAT) * BEAT); // message times land on beats
 const beatPulse = (t, k = 7) => { const x = (t - BEAT0) / BEAT; return Math.exp(-(x - Math.floor(x)) * k); };
 
 // Pink palace-roof line that draws itself in, ending in a heart (the sitcom's roof-and-heart motif).
@@ -18,24 +23,26 @@ function roofLine(p, heartK, dy = 0) {
     ctx.moveTo(0, 8); ctx.bezierCurveTo(-14, -2, -10, -14, 0, -7); ctx.bezierCurveTo(10, -14, 14, -2, 0, 8); ctx.stroke(); ctx.restore();
   }
 }
-function titleText(t, t0, y = 420, px = 190) {
+function titleText(t, t0, y = 420, px = 190, step = .3) {
   const full = textW(TITLE, px); let x = W / 2 - full / 2;
   [...TITLE].forEach((ch, i) => {
-    const w = textW(ch, px), k = seg(t, t0 + i * .3, t0 + .25 + i * .3);
+    const w = textW(ch, px), k = seg(t, t0 + i * step, t0 + .22 + i * step);
     if (k > 0 && ch !== ' ') chunky(ch, x + w / 2, y, px, C.pink, C.pinkDk, { k: backOut(k) });
     x += w;
   });
 }
 
-// 0 – 8.87: title over the sky, then the six consorts pop up in a row with their 位份.
+// 0 – 5.88 (instrumental intro): title letters and the six consorts pop in on the beat; the drum fill
+// (5.37–5.75 s) bounces the row; the first sung line cuts to the chat.
+const FILL = [5.375, 5.55, 5.75];
 function opening(t) {
   sky(); cloudLayer(t); petals(t, 40);
-  roofLine(seg(t, .3, 1.6), seg(t, 2.8, 3.2));
-  titleText(t, 1.4);
-  const gap = 260, x0 = W / 2 - gap * 2.5;
+  roofLine(seg(t, .1, .95), seg(t, .95, 1.25));
+  titleText(t, onBeat(13), 420, 190, BEAT);
+  const gap = 260, x0 = W / 2 - gap * 2.5, hop = FILL.reduce((a, f) => a + (t >= f ? Math.exp(-(t - f) * 14) : 0), 0);
   CAST.forEach((c, i) => {
-    const k = seg(t, 4.4 + i * .47, 4.75 + i * .47); if (k <= 0) return;
-    logo(c.key, x0 + i * gap, 690 - beatPulse(t) * 8, 150, { k: backOut(k) });
+    const at = onBeat(7 - i), k = seg(t, at, at + .3); if (k <= 0) return;
+    logo(c.key, x0 + i * gap, 690 - beatPulse(t) * 8 - hop * 40, 150, { k: backOut(k) });
     text(c.role, x0 + i * gap, 812, 44, c.col, { alpha: k });
     text(c.name, x0 + i * gap, 860, 30, C.grey, { alpha: k, weight: 800 });
   });
@@ -104,18 +111,18 @@ const CHATS = {
   doubao: { tint: '#7B5CF0', msgs: [
     { at: .3, who: E, text: '豆答应，你怎么看？' },
     { at: 1.4, who: 'doubao', text: '我这就用{最直接、不绕弯子、最直白}的方式说清楚：' },
-    { at: 3.3, who: 'doubao', text: '一个全重写，一个光写诗，一个只会骂，一个装没听见。', typing: .4 },
-    { at: 5.3, who: 'doubao', text: '至于皇上您，“奏折”写成“奏拆”，{确实该拆}。', typing: .4 },
-    { at: 7.1, who: E, text: '那你倒是改啊！' },
-    { at: 8.0, who: 'doubao', text: '改字不归我管，我只负责{说清楚}。', typing: .3 },
+    { at: 3.1, who: 'doubao', text: '一个全重写，一个光写诗，一个只会骂，一个装没听见。', typing: .4 },
+    { at: 5.0, who: 'doubao', text: '至于皇上您，“奏折”写成“奏拆”，{确实该拆}。', typing: .4 },
+    { at: 6.8, who: E, text: '那你倒是改啊！' },
+    { at: 7.6, who: 'doubao', text: '改字不归我管，我只负责{说清楚}。', typing: .3 },
   ] },
   claude: { tint: '#D97757', msgs: [
     { at: .3, who: E, text: '朕……只是想改个标题……' },
-    { at: 1.8, who: 'claude', text: '皇上，是“拆”字错了，臣妾已改为“折”。' },
-    { at: 3.0, who: 'claude', kind: 'doc', doc: 'fix' },
-    { at: 5.0, who: 'claude', text: '预算一个数都没动。您批了一天折子，{歇会儿吧}。', typing: .5 },
-    { at: 7.3, who: E, text: '还是你懂朕。' },
-  ], sfx: [['叮！', 1500, 520, 130, '#10A37F', 3.9]] },
+    { at: 1.5, who: 'claude', text: '皇上，是“拆”字错了，臣妾已改为“折”。' },
+    { at: 2.6, who: 'claude', kind: 'doc', doc: 'fix' },
+    { at: 4.5, who: 'claude', text: '预算一个数都没动。您批了一天折子，{歇会儿吧}。', typing: .5 },
+    { at: 6.8, who: E, text: '还是你懂朕。' },
+  ], sfx: [['叮！', 1500, 520, 130, '#10A37F', 3.4]] },
   ending: { tint: '#F2558C', msgs: [
     { at: .3, who: 'chatgpt', text: '{你说得对}！臣妾这就把熹贵人改的也重写一遍！' },
     { at: 2.4, who: E, text: '退下！！！' },
@@ -125,6 +132,12 @@ const CHATS = {
 
 function chatSeg(name) {
   const c = CHATS[name], o = {};
+  if (!c.snapped) {  // put every message, counter and sound effect on the beat
+    c.snapped = true;
+    for (const m of c.msgs) m.at = snap(m.at);
+    if (c.counter) { c.counter[2] = snap(c.counter[2]); c.counter[3] = snap(c.counter[3]); }
+    for (const f of c.sfx || []) f[5] = snap(f[5]);
+  }
   return (t, lt) => {
     sky(mix(c.tint, '#FFFFFF', .84), mix(c.tint, '#FFFFFF', .94));
     chatScene(c.msgs, lt, Object.assign(o, { noDots: !!c.counter }));
@@ -150,19 +163,19 @@ function endCard(t, lt) {
 }
 
 const card = key => (t, lt) => introCard(byKey(key), t, lt);
-// [start, end, fn(t, lt)] — cuts snapped to the music.
+// [start, end, fn(t, lt)] — every cut lands on the start of a lyric phrase P(n).
+const DUR = 92.45;  // the song ends here (the source's trailing watermark audio is cut off)
 const TIMELINE = [
-  [0, 8.87, opening],
-  [8.87, 14.93, setup],
-  [14.93, 17.4, card('chatgpt')], [17.4, 26.93, chatSeg('chatgpt')],
-  [26.93, 29.4, card('gemini')], [29.4, 39.30, chatSeg('gemini')],
-  [39.30, 41.8, card('grok')], [41.8, 49.78, chatSeg('grok')],
-  [49.78, 52.3, card('deepseek')], [52.3, 60.67, chatSeg('deepseek')],
-  [60.67, 63.1, card('doubao')], [63.1, 72.58, chatSeg('doubao')],
-  [72.58, 75.0, card('claude')], [75.0, 85.30, chatSeg('claude')],
-  [85.30, 92.43, chatSeg('ending')],
-  [92.43, 95.48, endCard],
+  [0, P(0), opening],
+  [P(0), P(2), setup],
+  [P(2), P(3), card('chatgpt')], [P(3), P(6), chatSeg('chatgpt')],
+  [P(6), P(7), card('gemini')], [P(7), P(10), chatSeg('gemini')],
+  [P(10), P(11), card('grok')], [P(11), P(14), chatSeg('grok')],
+  [P(14), P(15), card('deepseek')], [P(15), P(18), chatSeg('deepseek')],
+  [P(18), P(19), card('doubao')], [P(19), P(22), chatSeg('doubao')],
+  [P(22), P(23), card('claude')], [P(23), P(26), chatSeg('claude')],
+  [P(26), P(28), chatSeg('ending')],
+  [P(28), DUR, endCard],
 ];
-const DUR = 95.48;
 const SCRIPT_TEXT = TITLE + EPISODE + MEMO + JSON.stringify(CHATS) + CAST.map(c => c.role + c.name + c.tag.join('')).join('') +
   '皇上众妃奏折已重写已改好今日已说你说得对哔纯属虚构，博君一笑（饰）后宫工作群（7）‹···✓×0123456789,';
