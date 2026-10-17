@@ -25,6 +25,7 @@
 | [src/ch/](src/ch/) | 当前作品九个章节的分镜实现 |
 | [studio.html](studio.html) | 手动预览入口及离线渲染页面 |
 | [render.mjs](render.mjs) | 拼图、静帧、短片、批量帧与编码入口 |
+| [works/ai-zhenhuan/](works/ai-zhenhuan/) | 第二个作品《AI 甄嬛传》：Logo + 清宫头饰的角色造型，复用本风格引擎 |
 | [legacy/](legacy/) | 原始早期实验存档，当前制作链不加载，不作为新作品入口 |
 | [ORIGINAL_README.md](ORIGINAL_README.md) | 保留的原项目说明、作品链接、来源与致谢 |
 
@@ -62,3 +63,5 @@ node render.mjs --encode --out=out/pdoom.mp4
 从仓库根目录运行时使用 `node styles/watercolor-ink/render.mjs ...`。输入资源和相对输出路径始终以本风格目录为基准，不受终端当前目录影响；绝对 `--out` 路径也可使用。不同风格的 `out/` 相互隔离，且不提交 Git。
 
 默认浏览器为 `C:/Program Files/Google/Chrome/Application/chrome.exe`。其他安装位置请加上 `--chrome=<路径>`；路径含空格时将整个参数用引号括起来。
+
+其他渲染参数：`--page=<页面>` 渲染本目录下的其他页面（如 `works/ai-zhenhuan/cast_sheet.html`）；`--no-sandbox` 用于以 root 运行的 Linux 容器；`--angle=<后端>` 覆盖 WebGL 后端（Windows 默认 `d3d11`，其他系统由 Chrome 自选，无显卡时使用软件渲染）。设置了 `HTTPS_PROXY` 时，Chrome 会通过该代理加载字体。
