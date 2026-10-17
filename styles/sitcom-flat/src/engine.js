@@ -132,11 +132,12 @@ function typingDots(x, y, col, t) {
   rrect(x, y, 150, 86, 26); ctx.fillStyle = '#FFFFFF'; ctx.fill(); ctx.lineWidth = 5; ctx.strokeStyle = col; ctx.stroke();
   for (let i = 0; i < 3; i++) { ctx.fillStyle = C.grey; ctx.beginPath(); ctx.arc(x + 45 + i * 30, y + 43 - Math.max(0, Math.sin(t * 9 - i * .9)) * 10, 9, 0, TAU); ctx.fill(); }
 }
-// Small black counter pill (top-left), e.g. 今日已重做 ×20,001.
-function counterPill(label, n, k = 1) {
+// Small black counter pill (top-left, under the chat bar), e.g. 今日已哔 ×999.
+function counterPill(label, n, k = 1, y = 25) {
   if (k <= 0) return;
-  ctx.save(); ctx.translate(60, 50); ctx.scale(backOut(k), backOut(k));
-  rrect(0, 0, 420, 70, 35); ctx.fillStyle = '#16161A'; ctx.fill();
-  text(label, 34, 36, 32, '#FFFFFF', { align: 'left' }); text('×' + n.toLocaleString('en-US'), 390, 36, 30, '#F7C948', { align: 'right' });
+  const num = '×' + n.toLocaleString('en-US'), w = textW(label, 32) + textW(num, 30, 800) + 90;
+  ctx.save(); ctx.translate(W - 40 - w, y); ctx.scale(backOut(k), backOut(k));
+  rrect(0, 0, w, 70, 35); ctx.fillStyle = '#16161A'; ctx.fill();
+  text(label, 34, 36, 32, '#FFFFFF', { align: 'left' }); text(num, w - 34, 36, 30, '#F7C948', { align: 'right', weight: 800 });
   ctx.restore();
 }

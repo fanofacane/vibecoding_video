@@ -6,7 +6,7 @@
 
 | 风格 | 视觉特点 | 当前示例 | 入口 |
 | --- | --- | --- | --- |
-| 情景喜剧扁平风 · `sitcom-flat` | 蓝天白云樱花、粗体标题、Logo 角色、角色介绍卡、聊天气泡 | 《AI 甄嬛传》片头示例 | [风格说明](styles/sitcom-flat/README.md) |
+| 情景喜剧扁平风 · `sitcom-flat` | 蓝天白云樱花、粗体标题、Logo 角色、角色介绍卡、群聊对话 | 《AI 甄嬛传》第一集（群聊对话版） | [风格说明](styles/sitcom-flat/README.md) |
 | 水彩墨线手绘动画 · `watercolor-ink` | 纸张纹理、水彩晕染、手绘墨线、角色表演、连续分镜 | Clawd 音乐视频《I'm Upping My P(doom)》 | [风格说明与制作流程](styles/watercolor-ink/README.md) |
 
 风格以视觉语言命名。Clawd 是当前示例的角色，P(doom) 是当前作品的主题，均不作为风格分类标准。
