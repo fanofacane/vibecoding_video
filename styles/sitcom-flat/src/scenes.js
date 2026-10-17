@@ -140,14 +140,13 @@ function setup(t, lt) {
   if (k > 0) { ctx.fillStyle = `rgba(255,240,246,${.85 * k})`; ctx.fillRect(0, 0, W, H); chunky(EPISODE, W / 2, H / 2, 110, C.pink, C.pinkDk, { k: backOut(seg(lt, 0, .3)), alpha: k }); }
 }
 
-// End card: title again, next-episode teaser, disclaimer.
+// End card: title again and the disclaimer.
 function endCard(t, lt) {
   sky(); cloudLayer(t); petals(t, 40);
   roofLine(1, 1, 40);
   titleText(lt + 10, 0, 460);
   const k = seg(lt, .4, .8);
-  text('下集预告：皇上失眠了……', W / 2, 700, 64, C.ink, { alpha: k });
-  text('纯属虚构，博君一笑', W / 2, 800, 40, C.grey, { alpha: k, weight: 800 });
+  text('纯属虚构，博君一笑', W / 2, 720, 48, C.grey, { alpha: k, weight: 800 });
 }
 
 const card = key => (t, lt) => introCard(byKey(key), t, lt);
@@ -166,4 +165,4 @@ const TIMELINE = [
 ];
 const DUR = 95.48;
 const SCRIPT_TEXT = TITLE + EPISODE + MEMO + JSON.stringify(CHATS) + CAST.map(c => c.role + c.name + c.tag.join('')).join('') +
-  '皇上众妃奏折已重写已改好今日已说你说得对哔下集预告：皇上失眠了……纯属虚构，博君一笑（饰）后宫工作群（7）‹···✓×0123456789,';
+  '皇上众妃奏折已重写已改好今日已说你说得对哔纯属虚构，博君一笑（饰）后宫工作群（7）‹···✓×0123456789,';
