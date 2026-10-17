@@ -10,19 +10,24 @@ import puppeteer from 'puppeteer-core';
 import { spawn } from 'node:child_process';
 import { mkdirSync, writeFileSync, existsSync, statSync, renameSync, readdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+
+// Resolve inputs and relative outputs within this style, regardless of the caller's cwd.
+const STYLE_DIR = dirname(fileURLToPath(import.meta.url));
+const stylePath = p => resolve(STYLE_DIR, p);
+const AUDIO = stylePath('assets/pdoom.mp3');
 
 const args = Object.fromEntries(process.argv.slice(2).map(a => { const [k, v] = a.replace(/^--/, '').split('='); return [k, v ?? true]; }));
 const CHROME = args.chrome || 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 const DUR = 156.6, fps = +(args.fps || 24);
-const FRAMES_DIR = 'out/frames';
+const FRAMES_DIR = stylePath('out/frames');
 
 const run = (cmd, a) => new Promise((ok, bad) => { const p = spawn(cmd, a, { stdio: 'inherit' }); p.on('close', c => c ? bad(new Error(cmd + ' exited ' + c)) : ok()); });
 
 if (args.encode) {
-  const out = args.out || 'out/pdoom.mp4', n = readdirSync(FRAMES_DIR).filter(f => f.endsWith('.jpg')).length;
+  const out = stylePath(args.out || 'out/pdoom.mp4'), n = readdirSync(FRAMES_DIR).filter(f => f.endsWith('.jpg')).length;
   console.log(`encoding ${n} frames → ${out}`);
-  await run('ffmpeg', ['-y', '-loglevel', 'error', '-stats', '-framerate', String(fps), '-i', `${FRAMES_DIR}/f%05d.jpg`, '-i', 'assets/pdoom.mp3',
+  await run('ffmpeg', ['-y', '-loglevel', 'error', '-stats', '-framerate', String(fps), '-i', `${FRAMES_DIR}/f%05d.jpg`, '-i', AUDIO,
     '-map', '0:v', '-map', '1:a', '-c:v', 'libx264', '-preset', 'slow', '-crf', '17', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k',
     '-movflags', '+faststart', '-shortest', out]);
   console.log('wrote ' + out);
@@ -37,7 +42,7 @@ async function openPage(tag = '') {
   const page = await browser.newPage();
   page.on('console', m => { if (['error', 'warn'].includes(m.type())) console.log(`[page${tag}]`, m.text()); });
   page.on('pageerror', e => console.log(`[page error${tag}]`, e.message));
-  await page.goto(pathToFileURL(resolve('studio.html')).href + '?render', { waitUntil: 'networkidle0' });
+  await page.goto(pathToFileURL(stylePath('studio.html')).href + '?render', { waitUntil: 'networkidle0' });
   await page.waitForFunction('window.ready === true', { timeout: 60000 });
   if (args.loop) await page.evaluate(name => { window.LOOP = LOOPS[name]; }, args.loop);
   return page;
@@ -49,12 +54,12 @@ const frameOf = async (page, t, type, q) => {
 const times = s => String(s).split(',').map(Number);
 
 if (args.sheet) {
-  const page = await openPage(), out = args.out || 'out/sheet.jpg'; mkdirSync(dirname(out), { recursive: true });
+  const page = await openPage(), out = stylePath(args.out || 'out/sheet.jpg'); mkdirSync(dirname(out), { recursive: true });
   const { url, ms } = await page.evaluate((ts, c, w) => window.renderSheet(ts, c, w), times(args.sheet), +(args.cols || 3), +(args.w || 640));
   writeFileSync(out, Buffer.from(url.slice(url.indexOf(',') + 1), 'base64'));
   console.log(`${out}  ms/frame: ${ms.join(' ')}`);
 } else if (args.stills) {
-  const page = await openPage(), out = args.out || 'out/stills'; mkdirSync(out, { recursive: true });
+  const page = await openPage(), out = stylePath(args.out || 'out/stills'); mkdirSync(out, { recursive: true });
   console.log('GPU:', await page.evaluate(() => window.gpuInfo()));
   for (const s of times(args.stills)) {
     const t0 = Date.now(), buf = await frameOf(page, s, 'image/png');
@@ -63,7 +68,7 @@ if (args.sheet) {
   }
 } else if (args.loop) {
   // One full cycle of a standalone loop scene as PNGs (t = loop time); frame n equals frame 0, so it isn't rendered.
-  const out = args.out || `out/loop_${args.loop}`, workers = +(args.workers || 3); mkdirSync(out, { recursive: true });
+  const out = stylePath(args.out || `out/loop_${args.loop}`), workers = +(args.workers || 3); mkdirSync(out, { recursive: true });
   const probe = await openPage(), len = await probe.evaluate(() => window.LOOP.len), n = Math.round(len * fps);
   await probe.close();
   let next = 0; const start = Date.now();
@@ -96,9 +101,9 @@ if (args.sheet) {
 } else {
   const page = await openPage();
   const [a, b] = args.clip ? String(args.clip).split(':').map(Number) : [0, DUR];
-  const out = args.out || 'out/clip.mp4'; mkdirSync(dirname(out), { recursive: true });
+  const out = stylePath(args.out || 'out/clip.mp4'); mkdirSync(dirname(out), { recursive: true });
   const ff = spawn('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(fps), '-c:v', 'mjpeg', '-i', '-',
-    '-ss', String(a), '-t', String(b - a), '-i', 'assets/pdoom.mp3',
+    '-ss', String(a), '-t', String(b - a), '-i', AUDIO,
     '-map', '0:v', '-map', '1:a', '-c:v', 'libx264', '-preset', 'medium', '-crf', '19', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k', '-shortest', out],
     { stdio: ['pipe', 'inherit', 'inherit'] });
   const n = Math.round((b - a) * fps), start = Date.now();
