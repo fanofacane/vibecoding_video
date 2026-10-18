@@ -1,9 +1,10 @@
 // film.js: 《留白》, the whole film (about 3 minutes). Storyboard: creative_materials/2026-10-18_留白_分镜草案/分镜脚本.md
 //
-//   A1  0:00  lovers: day 1 live → four years scroll by → day 1460 live, she talks and I answer in a word
-//   A2  0:29  an ordinary friend: 127 days of silence → “在吗” → talking till 2 a.m. → same night, 9 vs 186 messages
-//   WL  0:54  the two windows copy into 50 in 3-D space; the camera dives in and the messages burst out
-//   TT  0:58  title
+//   OP  0:00  the question, as moving type (typewriter, fades, one word per screen, push-up, highlight, wipe)
+//   A1  0:17  lovers: day 1 live → four years scroll by → day 1460 live, side by side with an ordinary friend
+//             the same night: she talks and I answer in a word; he says “在吗” and we can't stop
+//   WL  0:48  the two windows copy into 50 in 3-D space; the camera dives in and the messages burst out
+//   TT  0:51  title, with 留白 said in plain words
 //   SE  1:02  the sea of words: flight → collapse into brush-offs; the words fall and become blocks
 //   Z   1:13  the explainer (charts and moving type, white): blocks → Gottman → formula → three factors
 //             (new information, curiosity, ease) → together → what to do
@@ -20,7 +21,7 @@ const dateDots = day => { const d = dayDate(day); return `${d.getUTCFullYear()} 
 const liveItems = (date, msgs) => [date, ...msgs.map(([at, who, text]) => ({ who, text, at }))];
 
 // Scene start times.
-const A1 = 0, A2 = 29.0, WL = 54.0, TT = 57.6, SE = 61.8, Z = SE + 11.0;   // Z: the explainer starts
+const A1 = 17.5, WL = A1 + 30.6, TT = WL + 3.6, SE = TT + 4.4, Z = SE + 11.0;   // Z: the explainer starts
 
 // ================================================================ shared pieces
 
@@ -88,6 +89,106 @@ function closing(ctx, t, t0, t1, a, b) {
 }
 
 const SHORT = ['嗯', '好的', '我知道了', '1', '晚安', '早安', '吃了', '吃了没', '哦', '嗯嗯', '好', '行', '收到', '哈哈', '到了', '在', '知道了', '早', '随便', '都行'];
+
+// ================================================================ OP · the question, as moving type
+
+// Beats for the one-word-per-screen run (also used for the sound).
+const OPENING_BEATS = [6.3, 6.75, 7.2, 7.65];
+
+// Centred serif line; returns its width. chars: optional per-character style callback (i, ch) → { color, scale, glow }.
+function centreLine(ctx, text, y, size, color, a = 1, chars = null, weight = 500) {
+  if (a <= 0) return 0;
+  ctx.save(); ctx.globalAlpha *= a;
+  ctx.font = `${weight} ${size}px ${SERIF}`; ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
+  const cs = [...text], w = ctx.measureText(text).width;
+  let x = W / 2 - w / 2;
+  cs.forEach((ch, i) => {
+    const cw = ctx.measureText(ch).width, st = chars ? chars(i, ch) : {};
+    ctx.save();
+    ctx.translate(x + cw / 2, y - size * .35); ctx.scale(st.scale ?? 1, st.scale ?? 1); ctx.translate(-(x + cw / 2), -(y - size * .35));
+    if (st.glow) { ctx.shadowColor = st.glow; ctx.shadowBlur = size * .5; }
+    ctx.globalAlpha *= st.a ?? 1;
+    ctx.fillStyle = st.color || color; ctx.fillText(ch, x, y);
+    ctx.restore();
+    x += cw;
+  });
+  ctx.restore();
+  return w;
+}
+
+function sceneOpening(ctx, t) {
+  backdrop(ctx, { t, lift: .5 });
+  const out = 1 - seg(t, A1 - .5, A1);
+  ctx.save(); ctx.globalAlpha *= out;
+
+  // 1 · Typewriter: one character at a time, with a cursor.
+  if (t < 3.0) {
+    const text = '你有没有发现——', n = Math.floor(seg(t, .5, .5 + 7 * .14) * 7 + 1e-6), a = 1 - seg(t, 2.5, 2.9);
+    const w = centreLine(ctx, text, 560, 68, COL.ink, a, i => ({ a: i < n ? 1 : 0 }));
+    ctx.font = `500 68px ${SERIF}`;
+    const shown = ctx.measureText([...text].slice(0, n).join('')).width;
+    if ((t * 2.2) % 1 < .6) { ctx.globalAlpha = a; ctx.fillStyle = P_BLUE; ctx.fillRect(W / 2 - w / 2 + shown + 6, 500, 4, 72); ctx.globalAlpha = 1; }
+  }
+  // 2 · Line by line: one fades out as the next fades in.
+  centreLine(ctx, '那个每天都在聊天的人，', 560, 72, COL.ink, seg(t, 3.0, 3.5) * (1 - seg(t, 4.4, 4.9)));
+  centreLine(ctx, '话却越来越少了。', 560, 72, COL.ink, seg(t, 4.6, 5.1) * (1 - seg(t, 5.8, 6.2)));
+  // 3 · One word fills the screen, then the next — each lands with a small bounce on the beat.
+  const words = ['早安。', '到了吗？', '嗯。', '晚安。'];
+  OPENING_BEATS.forEach((b, i) => {
+    if (t < b || t >= b + .45) return;
+    const k = seg(t, b, b + .18), sc = 1 + .14 * (1 - easeOut(k));
+    ctx.save(); ctx.translate(W / 2, 560); ctx.scale(sc, sc); ctx.translate(-W / 2, -560);
+    centreLine(ctx, words[i], 650, 280, i % 2 ? COL.dim : COL.ink, 1, null, 600);
+    ctx.restore();
+  });
+  // 4 · Lines push in from below; earlier lines move up.
+  const push = [['反而是那个好久没联系的朋友，', 8.3], ['一句“在吗”，', 9.2], ['就能聊到凌晨两点。', 10.0]];
+  if (t > 8.2 && t < 11.6) {
+    const a = 1 - seg(t, 11.0, 11.4);
+    push.forEach(([text, t0], i) => {
+      if (t < t0) return;
+      const k = easeOut(seg(t, t0, t0 + .45));
+      const later = push.filter(([, t1], j) => j > i && t >= t1).reduce((s, [, t1]) => s + easeOut(seg(t, t1, t1 + .45)), 0);
+      const y = 640 + (1 - k) * 70 - later * 86 - 40;
+      centreLine(ctx, text, y, 66, i === 2 ? COL.warm : COL.ink, a * k * (1 - .45 * clamp(later)));
+    });
+  }
+  // 5 · Follow-highlight: the line lights up character by character, like karaoke.
+  const q1 = '为什么天天联系的人，话越来越少，', q2 = '偶尔联系的人，却越聊越多？';
+  if (t > 11.5 && t < A1) {
+    const n1 = [...q1].length, pos = seg(t, 11.8, 13.8) * n1;
+    const wipe = seg(t, 14.2, 15.0);                              // 6 · the wipe that swaps in the second half
+    const both = easeInOut(seg(t, 15.3, 16.0));
+    const y1 = lerp(560, 490, both);
+    const a1 = seg(t, 11.5, 11.8);
+    // Line 1, highlighted up to `pos`, cut on the right of the wipe bar while the wipe runs.
+    const drawQ1 = () => centreLine(ctx, q1, y1, 74, COL.faint, a1, i => {
+      const d = pos - i;
+      if (d < 0) return {};
+      const cur = d < 1;
+      return { color: cur ? P_BLUE : COL.ink, scale: cur ? 1.18 : 1, glow: cur ? 'rgba(61,108,240,.8)' : null };
+    });
+    ctx.font = `500 74px ${SERIF}`;
+    const w1 = ctx.measureText(q1).width, w2 = ctx.measureText(q2).width, wmax = Math.max(w1, w2);
+    const bx = W / 2 - wmax / 2 - 20 + (wmax + 40) * wipe;
+    if (both > 0) {
+      ctx.save(); ctx.globalAlpha *= both; drawQ1(); ctx.restore();
+    } else {
+      ctx.save(); ctx.beginPath(); ctx.rect(bx, 0, W, H); ctx.clip(); drawQ1(); ctx.restore();
+    }
+    // Line 2 is revealed on the left of the bar, then settles below line 1.
+    ctx.save();
+    if (both <= 0) { ctx.beginPath(); ctx.rect(0, 0, bx, H); ctx.clip(); }
+    centreLine(ctx, q2, lerp(560, 620, both), 74, COL.ink, wipe > 0 ? 1 : 0, (i, ch) => ch === '？' ? { color: P_BLUE, glow: 'rgba(61,108,240,.7)' } : {});
+    ctx.restore();
+    if (wipe > 0 && wipe < 1) { ctx.fillStyle = P_BLUE; ctx.shadowColor = 'rgba(61,108,240,.9)'; ctx.shadowBlur = 20; ctx.fillRect(bx - 1.5, 460, 3, 150); ctx.shadowBlur = 0; }
+    // A last small line, typed, hands over to the chat.
+    const tail = '先从一段聊天记录说起。', m = Math.floor(seg(t, 16.2, 16.2 + 11 * .07) * 11);
+    centreLine(ctx, tail, 780, 32, COL.dim, 1, i => ({ a: i < m ? 1 : 0 }), 400);
+  }
+  ctx.restore();
+}
+const P_BLUE = '#3d6cf0';
 
 // ================================================================ A1 · lovers
 
@@ -172,30 +273,47 @@ function stampAt(ctx, y0, t) {
 }
 const swap = t => easeInOut(seg(t, T2, T2 + 1.0)) * (1 - easeInOut(seg(t, T3 - 1.2, T3)));
 
+// During the last night the lovers' chat moves to the middle and the friend's chat runs beside it.
+const NIGHT = { lx: 800, fx: 1340, w: 460, div: 760 };
 function sceneLovers(ctx, t) {
-  const a = 1 - seg(t, A2 - .6, A2);
-  if (a <= 0) return;
+  if (t < A1 - .4 || t >= WL) return;
+  const a = seg(t, A1 - .4, A1 + .3);
   ctx.save(); ctx.globalAlpha *= a;
   backdrop(ctx, { t, cx: W * .3 });
   const y0 = loveY(ctx, t), speed = Math.abs(y0 - loveY(ctx, t - 1 / 30)) * 30;
-  const sw = swap(t), x = lerp(COLX, LEFTX, sw);
-  ctx.fillStyle = COL.line; ctx.fillRect(940, 140, 1, 800);
+  const sw = swap(t), back = easeInOut(seg(t, T3 - 1.2, T3));
+  const x = t < T3 - 1.2 ? lerp(COLX, LEFTX, sw) : lerp(LEFTX, NIGHT.lx, back), cw = lerp(COLW, NIGHT.w, back);
+  ctx.fillStyle = COL.line; ctx.fillRect(lerp(940, NIGHT.div, back), 140, 1, 800);
   // Dashboard.
-  let day, clock, today;
-  if (t < T3 - 1) { day = 1; clock = hhmm(lerp(MIN(22, 13), MIN(25, 47), easeIn(seg(t, .6, T2)))); today = Math.round(lerp(31, 212, easeIn(seg(t, .5, T2)))); }
-  else { day = 1460; let m = MIN(22, 41); for (const [at, mm] of LATE_MINS) if (t >= at) m = mm; clock = hhmm(m); today = LATE.filter(([at]) => at <= t).length; }
-  dash(ctx, { a: 1 - sw, date: dateDots(day), big: clock, rows: [`在 一 起 第  ${day}  天`, `今 日 消 息  ${today}`] });
-  header(ctx, t, x + COLW / 2, 92, '小 鹿', LOVE_TYPING);
-  ctx.fillStyle = COL.line; ctx.fillRect(x, 116, COLW, 1);
+  let day, clock, rows;
+  if (t < T3 - 1) {
+    day = 1; clock = hhmm(lerp(MIN(22, 13), MIN(25, 47), easeIn(seg(t, A1 + .6, T2))));
+    rows = [`在 一 起 第  ${day}  天`, `今 日 消 息  ${Math.round(lerp(31, 212, easeIn(seg(t, A1 + .5, T2))))}`];
+  } else {
+    day = 1460; let m = MIN(22, 41); for (const [at, mm] of LATE_MINS) if (t >= at) m = mm; clock = hhmm(m);
+    rows = [`小 鹿  ·  今 日  ${LATE.filter(([at]) => at <= t).length}  条`, `老 周  ·  今 日  ${friendCount(t)}  条`];
+  }
+  dash(ctx, { a: 1 - sw, date: dateDots(day), big: clock, rows });
+  header(ctx, t, x + cw / 2, 92, '小 鹿', LOVE_TYPING);
+  ctx.fillStyle = COL.line; ctx.fillRect(x, 116, cw, 1);
+  // The friend's chat, beside it on the last night.
+  const fa = seg(t, T3 - .2, T3 + .6);
+  if (fa > 0) {
+    ctx.save(); ctx.globalAlpha *= fa;
+    header(ctx, t, NIGHT.fx + NIGHT.w / 2, 92, '老 周', FRIEND_TYPING);
+    ctx.fillStyle = COL.line; ctx.fillRect(NIGHT.fx, 116, NIGHT.w, 1);
+    chatColumn(ctx, { t, x: NIGHT.fx, w: NIGHT.w, top: TOP, bot: BOT, items: FRIEND, y0: friendY(ctx, t) });
+    ctx.restore();
+  }
   const items = t < T2 ? LOVE_DAY1 : LOVE;
   const trail = clamp(speed / 2500);
-  for (let g = 4; g >= 1 && trail > .05; g--) chatColumn(ctx, { t, x, w: COLW, top: TOP, bot: BOT, items, y0: y0 + g * speed / 70, a: .13 * trail });
-  chatColumn(ctx, { t, x, w: COLW, top: TOP, bot: BOT, items, y0 });
+  for (let g = 4; g >= 1 && trail > .05; g--) chatColumn(ctx, { t, x, w: cw, top: TOP, bot: BOT, items, y0: y0 + g * speed / 70, a: .13 * trail });
+  chatColumn(ctx, { t, x, w: cw, top: TOP, bot: BOT, items, y0 });
   // Narration.
-  NL(ctx, t, '刚在一起的时候，', .9, 4.3, 700);
-  NL(ctx, t, '什么都想告诉你。', 1.9, 4.3, 762);
-  NL(ctx, t, '一杯洒了的奶茶，', 4.7, T2 - .5, 700);
-  NL(ctx, t, '也能聊到凌晨两点。', 5.6, T2 - .5, 762);
+  NL(ctx, t, '刚在一起的时候，', A1 + .9, A1 + 4.3, 700);
+  NL(ctx, t, '什么都想告诉你。', A1 + 1.9, A1 + 4.3, 762);
+  NL(ctx, t, '一杯洒了的奶茶，', A1 + 4.7, T2 - .5, 700);
+  NL(ctx, t, '也能聊到凌晨两点。', A1 + 5.6, T2 - .5, 762);
   NR(ctx, t, '后来，我们每天都在聊。', T2 + .8, T2 + 3.7, 470);
   NR(ctx, t, '早安，晚安，到了吗，吃了吗。', T2 + 1.8, T2 + 3.7, 548, { size: 32, weight: 400, color: COL.dim, stagger: .035 });
   NR(ctx, t, '聊天成了一种习惯，', T2 + 4.0, T2 + 6.3, 470);
@@ -206,92 +324,71 @@ function sceneLovers(ctx, t) {
   if (sw > 0) { ctx.save(); ctx.globalAlpha *= sw; label(ctx, `第  ${stampAt(ctx, y0, t).day}  天    ${dateDots(stampAt(ctx, y0, t).day)}`, { t: 9, t0: 0, x: 1014, y: 770, size: 17 }); ctx.restore(); }
   NL(ctx, t, '第一千四百六十天，', T3 + .4, T3 + 3.4, 700);
   NL(ctx, t, '我们还是每天都在聊。', T3 + 1.3, T3 + 3.4, 762);
-  NL(ctx, t, '她说了很多，', T3 + 3.8, T3 + 7.2, 700);
-  NL(ctx, t, '我只回了几个字。', T3 + 4.8, T3 + 7.2, 762);
-  NL(ctx, t, '不是不爱了，', T3 + 7.6, A2 - .6, 700);
-  NL(ctx, t, '只是不知道还能聊什么。', T3 + 8.6, A2 - .6, 762, { tail: .5 });
+  NL(ctx, t, '同一个晚上，好久没联系的老周，', T3 + 3.8, T3 + 7.6, 700);
+  NL(ctx, t, '发来一句“在吗”。', T3 + 4.9, T3 + 7.6, 762);
+  NL(ctx, t, '她说了很多，我只回了几个字；', T3 + 8.0, WL - .3, 700);
+  NL(ctx, t, '和老周，却聊到停不下来。', T3 + 9.2, WL - .3, 762, { color: COL.warm });
   ctx.restore();
 }
 
-// ================================================================ A2 · an ordinary friend
+// ================================================================ the friend, the same night
 
-const B1 = A2 + 5.0, B2 = A2 + 19.0, B3 = A2 + 25.0;     // “在吗”, split screen, end
 const FRIEND_OLD = [{ date: '2026年6月12日  20:03' }, { who: 'them', text: '下次回来请你吃饭！' }, { who: 'me', text: '好啊，一言为定' }];
 const FRIEND_MSGS = (() => {
-  const m = [
-    [.6, 'them', '在吗'], [1.2, 'me', '在！！'], [1.9, 'them', '跟你说个事，我辞职了'], [2.4, 'me', '？？？什么时候'],
-    [3.1, 'them', '上个月。现在在大理开了个小民宿'], [3.6, 'them', '你还记得大二说要去的洱海吗'], [4.0, 'them', '我真的去了'],
-    [4.4, 'me', '等等，我要从头听'], [4.8, 'them', '说来话长哈哈哈'], [5.1, 'me', '那就慢慢说，我今晚不睡了'],
-  ];
+  const m = [[1.4, 'them', '在吗'], [2.2, 'me', '在！！'], [2.9, 'them', '跟你说个事，我辞职了'], [3.5, 'me', '？？？什么时候'],
+    [4.2, 'them', '上个月。现在在大理开了个小民宿'], [4.8, 'them', '你还记得大二说要去的洱海吗'], [5.2, 'them', '我真的去了'], [5.6, 'me', '等等，我要从头听']];
   const fast = [['them', '还养了只狗，叫“学分”'], ['me', '为什么叫学分'], ['them', '因为当年挂科啊'], ['me', '哈哈哈哈哈哈'], ['them', '对了老王结婚了你知道吗'],
     ['me', '不知道！！和谁'], ['them', '和隔壁班那个学委'], ['me', '我就说他们有情况'], ['them', '我上个月还去爬了雪山'], ['them', '山顶冷到怀疑人生'],
     ['me', '照片发我'], ['them', '你呢，最近怎么样'], ['me', '换了个组，天天加班'], ['them', '那你来大理住几天'], ['me', '真的可以吗'],
     ['them', '房间给你留着'], ['me', '那我年底去'], ['them', '一言为定'], ['me', '这次真的一言为定']];
-  fast.forEach(([who, text], i) => m.push([5.5 + 6.4 * (i / fast.length) ** .8, who, text]));
-  m.push([12.6, 'me', '几点了'], [13.2, 'them', '两点多了'], [13.7, 'me', '这么快'], [14.3, 'them', '下次再聊！'], [14.8, 'me', '好，晚安']);
-  return m.map(([at, w, x]) => [B1 + at, w, x]);
+  fast.forEach(([who, text], i) => m.push([6.0 + 5.8 * (i / fast.length) ** .8, who, text]));
+  return m.map(([at, w, x]) => [T3 + at, w, x]);
 })();
-const FRIEND = [...FRIEND_OLD, { date: '今天  21:47', at: B1 + .2 }, ...FRIEND_MSGS.map(([at, who, text]) => ({ who, text, at }))];
-const FRIEND_TYPING = FRIEND_MSGS.filter(([, w]) => w === 'them').slice(0, 5).map(([at]) => [at - .5, at]);
-
-function sceneFriend(ctx, t) {
-  const a = seg(t, A2 - .3, A2 + .5);
-  if (a <= 0 || t > WL + .1) return;
-  ctx.save(); ctx.globalAlpha *= a;
-  backdrop(ctx, { t, cx: W * .3 });
-  const l = t - A2, split = easeInOut(seg(t, B2, B2 + 1.2));
-  // Dashboard on the left until the split.
-  if (split < 1) {
-    ctx.save(); ctx.globalAlpha *= 1 - split;
-    ctx.fillStyle = COL.line; ctx.fillRect(940, 140, 1, 800);
-    if (t < B1) {
-      const n = Math.round(127 * easeOut(seg(l, .6, 3.2)));
-      dash(ctx, { a: 1 - seg(t, B1 - .3, B1), over: '距 离 上 次 聊 天', big: `${n} 天`, rows: ['老 周', '大 学 室 友'] });
-    } else {
-      const m = lerp(MIN(21, 47), MIN(26, 14), easeIn(seg(t, B1 + .5, B1 + 12.6)));
-      const today = Math.min(186, Math.round(lerp(0, 186, easeIn(seg(t, B1 + .4, B1 + 13.6)))));
-      dash(ctx, { a: seg(t, B1, B1 + .4), date: '2026 . 10 . 18', big: hhmm(m), rows: ['此 刻', `今 日 消 息  ${today}`] });
-    }
-    NL(ctx, t, '我和他，', A2 + 1.2, B1 - .2, 700);
-    NL(ctx, t, '四个月没说过话。', A2 + 2.0, B1 - .2, 762);
-    NL(ctx, t, '一句“在吗”，', B1 + 1.0, B1 + 6.4, 700);
-    NL(ctx, t, '就聊到了凌晨两点。', B1 + 2.0, B1 + 6.4, 762);
-    NL(ctx, t, '没有谁必须回复谁，', B1 + 6.8, B2 - .4, 700);
-    NL(ctx, t, '可每一句，都想接下去。', B1 + 7.8, B2 - .4, 762);
-    ctx.restore();
-  }
-  // The friend's window: right side, then the right half of the split.
-  const fcx = lerp(COLX + COLW / 2 - 40 + 40, 1420, split), cy = lerp(560, 560, split);
-  panel(ctx, { t, cx: fcx, cy, name: '老 周', items: FRIEND, typing: FRIEND_TYPING, fade: 90 });
-  // Split screen: the lovers' same night slides in on the left.
-  if (split > 0) {
-    panel(ctx, { t: 99, cx: lerp(-400, 500, split), cy, name: '小 鹿', items: LOVE_TONIGHT, a: split });
-    ctx.fillStyle = COL.line; ctx.fillRect(960, 160 + (1 - split) * 400, 1, 780 * split);
-    label(ctx, '同 一 个 晚 上', { t, t0: B2 + .8, x: W / 2, y: 50, size: 18, align: 'center', color: COL.ink, spacing: 4 });
-    label(ctx, '小 鹿  ·  今 日  9  条', { t, t0: B2 + 1.4, x: 500, y: 1010, size: 18, align: 'center' });
-    label(ctx, '老 周  ·  今 日  186  条', { t, t0: B2 + 1.8, x: 1420, y: 1010, size: 18, align: 'center' });
-  }
-  ctx.restore();
-}
+const FRIEND = [...FRIEND_OLD, { date: '今天  22:43', at: T3 + 1.0 }, ...FRIEND_MSGS.map(([at, who, text]) => ({ who, text, at }))];
+const FRIEND_TYPING = FRIEND_MSGS.filter(([, w]) => w === 'them').slice(0, 4).map(([at]) => [at - .5, at]);
+const friendCount = t => Math.min(186, Math.round(lerp(0, 186, easeIn(seg(t, T3 + 1.4, T3 + 12.0)))));
+const friendY = (ctx, t) => Math.min(TOP + 20, BOT - 30 - chatHeight(ctx, FRIEND, t));
 
 // ================================================================ WL · the 50 windows
 
-// The two windows of the split screen hang in 3-D space with 48 copies around them. The originals sit
-// exactly where they were on screen (camera at z = −F, scale 1). Copies slide out, the camera pulls back and
+// The two night columns hang in 3-D space with 48 copies around them. The originals sit exactly where
+// they were on screen (camera at z = −F, scale 1). Copies slide out, the camera pulls back and
 // turns until the wall fills the frame, then dives in; brush-off replies burst out toward the lens.
 // Plenty of history above every copy, so each can keep pulling back through it.
 const WALL_LOVE = [...HISTORY, ...HISTORY];
 const WALL_FRIEND = (() => { const m = FRIEND_MSGS.map(([, who, text]) => ({ who, text })); return Array.from({ length: 16 }, () => m).flat(); })();
-const ORIG_LOVE = [...WALL_LOVE, ...LOVE_TONIGHT], ORIG_FRIEND = [...WALL_FRIEND, ...FRIEND];
+const ORIG_FRIEND = [...WALL_FRIEND, ...FRIEND];
+// Where the two night columns sit, as world positions (centre of column, header to bottom).
+const ORIGS = { lover: { cx: NIGHT.lx + NIGHT.w / 2 }, friend: { cx: NIGHT.fx + NIGHT.w / 2 } };
+const ORIG_CY = (60 + BOT) / 2;
 const SLOTS = (() => {
   const out = [], SX = 920, SY = 1040;
   for (let r = 0; r < 5; r++) for (let c = 0; c < 10; c++) {
-    const i = r * 10 + c, orig = r === 2 && (c === 4 || c === 5);
-    out.push({ i, X: (c - 4.5) * SX, Y: (r - 2) * SY, Z: orig ? 0 : (hash(i + 3) - .5) * 900, orig, lover: c < 5,
+    if (r === 2 && (c === 4 || c === 5)) continue;   // the originals take these places
+    const i = r * 10 + c;
+    out.push({ i, X: (c - 4.5) * SX, Y: (r - 2) * SY, Z: (hash(i + 3) - .5) * 900, lover: c < 5,
       order: Math.hypot(c - 4.5, (r - 2) * 1.3) + hash(i) * .6 });
   }
+  for (const [lover, o] of [[true, ORIGS.lover], [false, ORIGS.friend]])
+    out.push({ i: lover ? 24 : 25, X: o.cx - W / 2, Y: ORIG_CY - H / 2, Z: 0, orig: true, lover, order: 0 });
   return out;
 })();
+// An original column drawn in place (screen coordinates), with a frame that fades in.
+function origColumn(ctx, t, lover, d) {
+  const x = lover ? NIGHT.lx : NIGHT.fx, w = NIGHT.w, run = Math.max(0, d - .5), v = 500;
+  const fr = seg(d, .05, .6);
+  if (fr > 0) {
+    roundRect(ctx, x - 40, 50, w + 80, BOT - 20, 30);
+    ctx.fillStyle = `rgba(10,11,14,${.92 * fr})`; ctx.fill();
+    ctx.strokeStyle = `rgba(237,232,228,${.3 * fr})`; ctx.lineWidth = 4; ctx.stroke();
+  }
+  header(ctx, 99, x + w / 2, 92, lover ? '小 鹿' : '老 周');
+  ctx.fillStyle = COL.line; ctx.fillRect(x, 116, w, 1);
+  ctx.save(); ctx.beginPath(); ctx.rect(x - 40, 120, w + 80, BOT - 100); ctx.clip();
+  if (lover) chatColumn(ctx, { t: WL, x, w, top: TOP, bot: BOT, items: LOVE, y0: loveY(ctx, WL) + v * run * run });
+  else chatColumn(ctx, { t: 99, x, w, top: TOP, bot: BOT, items: ORIG_FRIEND, y0: friendY(ctx, WL) - chatHeight(ctx, WALL_FRIEND, 99) + v * run * run });
+  ctx.restore();
+}
 function wallCam(d) {
   const back = easeInOut(seg(d, .1, 1.7)), dive = seg(d, 1.6, 3.6) ** 2.2;
   return { x: -dive * 700, y: -60 * back + dive * 500, z: -F * Math.exp(lerp(0, Math.log(4.6), back)) + dive * 7400, yaw: .14 * Math.sin(Math.PI * .5 * back) - dive * .2, roll: -.035 * back + .03 * dive };
@@ -314,7 +411,8 @@ function sceneWall(ctx, t) {
     const k = sl.orig ? 1 : easeOut(seg(d, .2 + sl.order * .13, .75 + sl.order * .13));
     if (k <= 0) continue;
     // Copies slide out of the nearer original.
-    const ox = sl.lover ? -460 : 460, P = project(cam, lerp(ox, sl.X, k), sl.Y * k, sl.Z * k);
+    const o = sl.lover ? ORIGS.lover : ORIGS.friend, ox = o.cx - W / 2, oy = ORIG_CY - H / 2;
+    const P = project(cam, lerp(ox, sl.X, k), lerp(oy, sl.Y, k), sl.Z * k);
     if (P) list.push({ sl, P, k });
   }
   list.sort((a, b) => b.P.z - a.P.z);
@@ -323,6 +421,12 @@ function sceneWall(ctx, t) {
     const fog = clamp(1.3 - P.z / 8000) * seg(P.z, 60, 500);
     ctx.save();
     ctx.translate(P.x, P.y); ctx.scale(P.k, P.k);
+    if (sl.orig) {
+      ctx.globalAlpha *= fog * fade;
+      ctx.translate(-(sl.lover ? ORIGS.lover.cx : ORIGS.friend.cx), -ORIG_CY);
+      origColumn(ctx, t, sl.lover, d);
+      ctx.restore(); continue;
+    }
     // Every window pulls back through its history (older messages come down from the top), faster and faster.
     const v = sl.orig ? 500 : 1300 + hash(sl.i) * 900, run = Math.max(0, d - .5);
     let items, y0;
@@ -344,7 +448,7 @@ function sceneWall(ctx, t) {
   for (let j = 0; j < 240; j++) {
     const t0 = WL + 1.9 + hash(j) * 1.5, q = seg(t, t0, t0 + 1.3);
     if (q <= 0 || q >= 1) continue;
-    const sl = SLOTS[Math.floor(hash(j + 9) * 50)];
+    const sl = SLOTS[Math.floor(hash(j + 9) * SLOTS.length)];
     const P = project(wallCam(t0 - WL), sl.X + (hash(j + 1) - .5) * 600, sl.Y + (hash(j + 2) - .5) * 800, sl.Z);
     if (!P) continue;
     const e = easeIn(q), x = P.x + (P.x - W / 2) * e * 1.6, y = P.y + (P.y - H / 2) * e * 1.6;
@@ -360,7 +464,7 @@ function sceneTitle(ctx, t) {
   ctx.save(); ctx.globalAlpha *= a; backdrop(ctx, { t, lift: .6 }); ctx.restore();
   label(ctx, '一 部 关 于 聊 天 记 录 的 短 片', { t, t0: TT + .3, out: SE - .5, x: W / 2, y: 410, size: 16, align: 'center', spacing: 3 });
   narr(ctx, '留白', { t, t0: TT + .2, out: SE - .5, x: W / 2, y: 590, size: 180, align: 'center', stagger: .35, glow: COL.warm });
-  narr(ctx, '为什么最亲的人话越来越少，普通朋友却总有得聊', { t, t0: TT + 1.2, out: SE - .5, x: W / 2, y: 690, size: 28, weight: 400, align: 'center', color: COL.dim, stagger: .025 });
+  narr(ctx, '留白：别把每一天都聊满，给彼此留一点不联系的空隙。', { t, t0: TT + 1.2, out: SE - .5, x: W / 2, y: 690, size: 32, weight: 400, align: 'center', color: COL.dim, stagger: .03 });
 }
 
 // ================================================================ SE · the sea of words
@@ -414,7 +518,7 @@ function sceneSea(ctx, t) {
 // ================================================================ the explainer: charts and moving type
 
 const S1 = Z + 9.0, S2 = Z + 10.4, S3 = Z + 25.0, S4 = Z + 30.0, S5 = Z + 41.0;   // flip, Gottman, formula, time, Granovetter
-const F2 = Z + 52.0, F3 = Z + 66.0, CB = Z + 82.0, AD = Z + 92.0, EN = Z + 105.0, ED = EN + 11.5, DUR = EN + 17.5;
+const F2 = Z + 52.0, F3 = Z + 66.0, CB = Z + 82.0, AD = Z + 92.0, EN = Z + 105.0, ED = EN + 11.5, DUR = EN + 19.0;
 
 const P = { bg: '#eceef1', bg2: '#f6f7f9', ink: '#1c1e23', dim: '#878b94', faint: '#c9ccd2', blue: '#3d6cf0', pill: '#25272c' };
 const tag = (ctx, t, text, t0, x, y, o = {}) => label(ctx, text, { t, t0, x, y, size: 15, spacing: 2, color: P.dim, ...o });
@@ -833,7 +937,7 @@ function sceneTogether(ctx, t) {
   tag(ctx, t, '话 题', CB + 1.2, 1420, 380, { align: 'center', size: 15, color: P.ink });
   tag(ctx, t, '示 意', CB + 1.2, 1780, 1036, { size: 12, color: P.faint, align: 'right' });
   ink(ctx, t, '话少，不是因为不爱了，', CB + 4.8, 140, 900, { size: 46 });
-  narr(ctx, [['是因为', P.ink], ['没有留白', P.blue], ['。', P.ink]], { t, t0: CB + 6.2, x: 140, y: 980, size: 46, stagger: .07 });
+  narr(ctx, [['是因为我们把每一天都聊满了，', P.ink], ['没给新鲜事留出长出来的时间', P.blue], ['。', P.ink]], { t, t0: CB + 6.2, x: 140, y: 980, size: 40, stagger: .05 });
   ctx.restore();
 }
 
@@ -845,7 +949,7 @@ function sceneAdvice(ctx, t) {
   const items = [
     [['接住每一句“废话”', P.blue], ['——那是关系的脉搏。', P.ink]],
     [['偶尔问一个真问题', P.blue], ['，而不是“吃了吗”。', P.ink]],
-    [['给彼此留一点白', P.blue], ['，让新鲜事有时间长出来。', P.ink]],
+    [['不必天天聊满', P.blue], ['，留一点空，让新鲜事有时间长出来。', P.ink]],
   ];
   items.forEach((parts, i) => {
     const y = 360 + i * 200, t0 = AD + .8 + i * 2.6;
@@ -895,7 +999,8 @@ function sceneEnding(ctx, t) {
   if (t >= ED - .3) {
     ctx.save(); ctx.globalAlpha *= seg(t, ED - .3, ED + .4); backdrop(ctx, { t, lift: .6 }); ctx.restore();
     narr(ctx, '留白', { t, t0: ED + .3, x: W / 2, y: 560, size: 180, align: 'center', stagger: .35, glow: COL.warm });
-    narr(ctx, '最亲的人，也需要一点“好久不见”。', { t, t0: ED + 1.6, x: W / 2, y: 680, size: 32, weight: 400, align: 'center', color: COL.dim, stagger: .04 });
+    narr(ctx, '就是别把每一天都聊满，给彼此留一点不说话的时间。', { t, t0: ED + 1.4, x: W / 2, y: 680, size: 32, weight: 400, align: 'center', color: COL.ink, stagger: .035 });
+    narr(ctx, '最亲的人，也需要一点“好久不见”。', { t, t0: ED + 3.2, x: W / 2, y: 740, size: 28, weight: 400, align: 'center', color: COL.dim, stagger: .04 });
   }
 }
 
@@ -908,8 +1013,8 @@ function drawFrame(ctx, t) {
   const white = t >= S2 && t < EN - 1.5;
   if (white) whiteBackdrop(ctx); else { ctx.fillStyle = COL.bg0; ctx.fillRect(0, 0, W, H); }
   if (t < Z) {
-    if (t < A2 + .1) sceneLovers(ctx, t);
-    sceneFriend(ctx, t);
+    if (t < A1 + .2) sceneOpening(ctx, t);
+    sceneLovers(ctx, t);
     sceneWall(ctx, t);
     sceneTitle(ctx, t);
   }
@@ -937,6 +1042,7 @@ const CUES = (() => {
   const c = [];
   const send = list => list.forEach(([at]) => c.push({ t: at, kind: 'send', gain: .9 }));
   send(DAY1); send(LATE); send(FRIEND_MSGS);
+  OPENING_BEATS.forEach(b => c.push({ t: b, kind: 'tick', pitch: .15 }));
   c.push({ t: WL + 1.95, kind: 'boom' }, { t: WL + 2.0, kind: 'shimmer' });
   c.push({ t: TT + .2, kind: 'chord', notes: [146.8, 220, 293.7, 370] });
   c.push({ t: SE - .3, kind: 'swell', dur: 6.0 }, { t: SE + 7.6, kind: 'note', f: 220 });
@@ -950,11 +1056,11 @@ const CUES = (() => {
 })();
 
 const PAD = [
-  [0.3, [110, 164.8, 261.6, 329.6]], [4.3, [98, 146.8, 246.9, 293.7]],
+  [0.3, [87.3, 130.8, 220]], [5.5, [82.4, 123.5, 196, 246.9]], [11.2, [98, 146.8, 246.9, 293.7]],
+  [A1 + .3, [110, 164.8, 261.6, 329.6]], [A1 + 4.3, [98, 146.8, 246.9, 293.7]],
   [T2 + .5, [87.3, 130.8, 220, 261.6]], [T2 + 4.5, [82.4, 123.5, 196, 246.9]],
   [T3 + .3, [87.3, 130.8, 220]], [T3 + 5.3, [82.4, 123.5, 196]],
-  [A2 + .4, [98, 146.8, 220]], [B1 + .3, [110, 164.8, 261.6, 329.6]], [B1 + 4.3, [123.5, 185, 293.7]], [B1 + 8.3, [110, 164.8, 277.2]],
-  [B2 + .4, [98, 146.8, 246.9]],
+  [T3 + 8.0, [110, 164.8, 261.6, 329.6]],
   [SE + 6.6, [73.4, 110, 174.6]], [Z + .3, [87.3, 130.8, 220]], [Z + 4.3, [82.4, 123.5, 196]],
   ...Array.from({ length: Math.ceil((EN - S2) / 4) }, (_, i) => [S2 + .2 + i * 4, [[130.8, 196, 261.6, 329.6], [110, 164.8, 261.6, 329.6], [116.5, 174.6, 293.7], [98, 146.8, 246.9, 293.7]][i % 4]]),
   [EN + .3, [98, 146.8, 220]], [EN + 6.6, [110, 164.8, 261.6, 329.6]],
