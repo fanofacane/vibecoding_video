@@ -6,7 +6,7 @@
 
 | 风格 | 视觉特点 | 当前示例 | 入口 |
 | --- | --- | --- | --- |
-| 情景喜剧扁平风 · `sitcom-flat` | 蓝天白云樱花、粗体标题、Logo 角色、角色介绍卡、群聊对话 | 《AI 甄嬛传》第一集（群聊对话版） | [风格说明](styles/sitcom-flat/README.md) |
+| 情景喜剧群聊风 · `sitcom-flat` | 《爱情公寓》式扁平卡通片头、Logo 当角色、角色介绍卡、手机群聊段子、按歌词卡点剪辑 | 《AI 甄嬛传》第一集《朕只是想改个标题》 | [风格说明](styles/sitcom-flat/README.md) · [制作规范](styles/sitcom-flat/STYLE_GUIDE.md) |
 | 水彩墨线手绘动画 · `watercolor-ink` | 纸张纹理、水彩晕染、手绘墨线、角色表演、连续分镜 | Clawd 音乐视频《I'm Upping My P(doom)》 | [风格说明与制作流程](styles/watercolor-ink/README.md) |
 
 风格以视觉语言命名。Clawd 是当前示例的角色，P(doom) 是当前作品的主题，均不作为风格分类标准。
@@ -15,7 +15,15 @@
 
 ```text
 styles/
-  sitcom-flat/             情景喜剧扁平风（《AI 甄嬛传》）
+  sitcom-flat/             情景喜剧群聊风
+    README.md             风格说明与命令
+    STYLE_GUIDE.md        视觉、剧本与卡点规范
+    src/                  通用引擎、群聊系统与镜头组件
+    tools/                配乐分析（节拍、人声进入点、结束点）
+    works/_template/      新作品模板
+    works/ai-zhenhuan-ep01/  示例作品《AI 甄嬛传》第一集
+    index.html            预览页面（?work=<作品id>）
+    render.mjs            渲染入口
   watercolor-ink/          水彩墨线手绘动画
     README.md             风格定义、文件导航与制作流程
     ORIGINAL_README.md    原项目说明、来源和致谢
