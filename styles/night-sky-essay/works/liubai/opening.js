@@ -3,7 +3,8 @@
 // filling the frame on the beat (then settling into a vertical column), and wipes that swap the whole page.
 // Horizontal and vertical text are mixed so the frame is never just one line.
 
-const DUR = 16.0;
+// Laid out on a 16 s timeline (TL) and played back in 5 s.
+const TL_DUR = 16.0, DUR = 5.0, SPEED = TL_DUR / DUR;
 const BLUE = '#3d6cf0';
 
 // ---------------------------------------------------------------- helpers
@@ -85,9 +86,6 @@ function page1(ctx, t) {
       ctx.scale(lerp(bounce, sizeCol / sizeBig, k), lerp(bounce, sizeCol / sizeBig, k));
       vtext(ctx, w, 0, 0, sizeBig, COL.ink, 1, null, 'rgba(237,232,228,.35)');
       ctx.restore();
-    } else {
-      const older = BEATS.filter(x => x > b && t > x + .62).length;
-      vtext(ctx, w, COLS_X[i], yCol, sizeCol, i === 2 ? BLUE : COL.ink, 1 - .45 * clamp(older / 2));
     }
   });
 
@@ -102,65 +100,77 @@ function page1(ctx, t) {
   ctx.fillStyle = COL.line; ctx.fillRect(150, 580, 760 * easeOut(seg(t, 6.0, 6.8)), 1);
 }
 
+// The settled columns stay on screen through the wipe; on page 2 they shrink a little and pack to the right.
+const COLS_X2 = [1790, 1650, 1510, 1370];
+function columns(ctx, t) {
+  const m = easeInOut(seg(t, 8.9, 9.9));
+  WORDS.forEach((w, i) => {
+    const b = BEATS[i];
+    if (t <= b + .62) return;
+    const older = BEATS.filter(x => x > b && t > x + .62).length;
+    const a = lerp(1 - .45 * clamp(older / 2), .55, m);
+    vtext(ctx, w, lerp(COLS_X[i], COLS_X2[i], m), lerp(150, 210, m), lerp(150, 120, m), i === 2 ? BLUE : COL.ink, a);
+  });
+}
+
 // ---------------------------------------------------------------- page 2: the question
 
 function page2(ctx, t) {
   // A big vertical 为什么 on the left, the question to its right.
-  vtext(ctx, '为什么', 300, 190, 220, COL.ink, 1, i => seg(t, 9.6 + i * .12, 10.0 + i * .12), 'rgba(237,232,228,.25)');
-  ctx.fillStyle = COL.line; ctx.fillRect(470, 200, 1, 700 * easeOut(seg(t, 9.8, 10.6)));
+  vtext(ctx, '为什么', 210, 200, 200, COL.ink, 1, i => seg(t, 9.6 + i * .12, 10.0 + i * .12), 'rgba(237,232,228,.25)');
+  ctx.fillStyle = COL.line; ctx.fillRect(360, 200, 1, 680 * easeOut(seg(t, 9.8, 10.6)));
   ctx.save();
-  ctx.font = `500 74px ${SERIF}`; ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
+  ctx.font = `500 62px ${SERIF}`; ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
   const q1 = [['天天联系的人，话', COL.ink], ['越来越少', COL.dim], ['；', COL.ink]];
-  let x = 540; for (const [s, c] of q1) { ctx.fillStyle = c; ctx.fillText(s, x, 430); x += ctx.measureText(s).width; }
+  let x = 420; for (const [s, c] of q1) { ctx.fillStyle = c; ctx.fillText(s, x, 430); x += ctx.measureText(s).width; }
   ctx.restore();
   // Second line arrives under a horizontal wipe moving down.
   const w2 = seg(t, 11.0, 11.7), by = lerp(470, 600, easeInOut(w2));
   if (w2 > 0) {
     ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, by); ctx.clip();
-    ctx.font = `500 74px ${SERIF}`; ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
+    ctx.font = `500 62px ${SERIF}`; ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
     const q2 = [['偶尔联系的人，却', COL.ink], ['越聊越多', COL.warm], ['？', BLUE]];
-    let xx = 540; for (const [s, c] of q2) { ctx.fillStyle = c; if (s === '？') { ctx.shadowColor = 'rgba(61,108,240,.8)'; ctx.shadowBlur = 24; } ctx.fillText(s, xx, 560); ctx.shadowBlur = 0; xx += ctx.measureText(s).width; }
+    let xx = 420; for (const [s, c] of q2) { ctx.fillStyle = c; if (s === '？') { ctx.shadowColor = 'rgba(61,108,240,.8)'; ctx.shadowBlur = 24; } ctx.fillText(s, xx, 560); ctx.shadowBlur = 0; xx += ctx.measureText(s).width; }
     ctx.restore();
-    if (w2 < 1) { ctx.fillStyle = BLUE; ctx.shadowColor = 'rgba(61,108,240,.9)'; ctx.shadowBlur = 18; ctx.fillRect(520, by, 1100, 2.5); ctx.shadowBlur = 0; }
+    if (w2 < 1) { ctx.fillStyle = BLUE; ctx.shadowColor = 'rgba(61,108,240,.9)'; ctx.shadowBlur = 18; ctx.fillRect(400, by, 860, 2.5); ctx.shadowBlur = 0; }
   }
   // Supporting lines pushed in underneath, and a vertical note on the far right.
   pushBlock(ctx, t, [
     [[['这部片子想回答的，就是这个问题。', COL.dim]], 12.4],
     [[['先从一段', COL.dim], ['聊天记录', COL.ink], ['说起。', COL.dim]], 13.3],
-  ], 544, 820, 40, 62);
-  vtext(ctx, '天天联系', 1780, 230, 30, COL.dim, 1, i => seg(t, 12.0 + i * .08, 12.3 + i * .08));
-  vtext(ctx, '偶尔联系', 1720, 430, 30, COL.warm, 1, i => seg(t, 12.3 + i * .08, 12.6 + i * .08));
+  ], 424, 820, 38, 60);
 }
 
 // ---------------------------------------------------------------- frame
 
 const WIPE1 = [8.9, 9.7];   // vertical bar sweeps left to right: page 1 → page 2
 
-function drawFrame(ctx, t) {
+function drawFrame(ctx, real) {
+  const t = real * SPEED;
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1;
   ctx.fillStyle = COL.bg0; ctx.fillRect(0, 0, W, H);
   backdrop(ctx, { t, lift: .5 });
-  const out = 1 - seg(t, DUR - .8, DUR - .1);
+  const out = 1 - seg(t, TL_DUR - .8, TL_DUR - .1);
   ctx.save(); ctx.globalAlpha *= out;
   corners(ctx, t, 1);
-  const w = seg(t, WIPE1[0], WIPE1[1]), bx = lerp(-20, W + 20, easeInOut(w));
-  if (t < WIPE1[1]) { ctx.save(); ctx.beginPath(); ctx.rect(bx, 0, W, H); ctx.clip(); page1(ctx, t); ctx.restore(); }
+  const w = seg(t, WIPE1[0], WIPE1[1]), bx = lerp(-20, 1300, easeInOut(w));
+  if (t < WIPE1[1] + .1) { ctx.save(); ctx.beginPath(); ctx.rect(t > WIPE1[1] ? W : bx, 0, W, H); ctx.clip(); page1(ctx, t); ctx.restore(); }
   if (t > WIPE1[0]) { ctx.save(); ctx.beginPath(); ctx.rect(0, 0, bx, H); ctx.clip(); page2(ctx, t); ctx.restore(); }
+  columns(ctx, t);
   if (w > 0 && w < 1) { ctx.fillStyle = BLUE; ctx.shadowColor = 'rgba(61,108,240,.9)'; ctx.shadowBlur = 24; ctx.fillRect(bx - 1.5, 0, 3, H); ctx.shadowBlur = 0; }
   ctx.restore();
-  const black = 1 - seg(t, 0, .5) + seg(t, DUR - .3, DUR);
+  const black = 1 - seg(real, 0, .15) + seg(real, DUR - .12, DUR);
   if (black > 0) { ctx.fillStyle = `rgba(0,0,0,${clamp(black)})`; ctx.fillRect(0, 0, W, H); }
-  finish(ctx, t);
+  finish(ctx, real);
 }
 
 // ---------------------------------------------------------------- sound
 
 const CUES = [
-  ...BEATS.map((b, i) => ({ t: b, kind: 'boom', i })).slice(0, 0),
-  ...BEATS.map((b, i) => ({ t: b, kind: 'note', f: [523.3, 587.3, 392, 523.3][i] })),
-  { t: WIPE1[0], kind: 'whoosh' }, { t: 11.0, kind: 'whoosh' },
-  { t: 11.7, kind: 'chord', notes: [146.8, 220, 293.7, 370] },
+  ...BEATS.map((b, i) => ({ t: b / SPEED, kind: 'note', f: [523.3, 587.3, 392, 523.3][i] })),
+  { t: WIPE1[0] / SPEED, kind: 'whoosh' }, { t: 11.0 / SPEED, kind: 'whoosh' },
+  { t: 11.7 / SPEED, kind: 'chord', notes: [146.8, 220, 293.7, 370] },
 ];
-const PAD = [[.2, [87.3, 130.8, 220]], [3.6, [82.4, 123.5, 196, 246.9]], [6.2, [98, 146.8, 246.9, 293.7]], [9.6, [110, 164.8, 261.6, 329.6]], [13, [98, 146.8, 220]]];
+const PAD = [[.05, [87.3, 130.8, 220]], [2.8, [110, 164.8, 261.6, 329.6]]];
 
 const CUT = { dur: DUR, cues: CUES, pad: PAD, drawFrame };
