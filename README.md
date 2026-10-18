@@ -36,6 +36,9 @@ styles/
     studio.html           浏览器预览与渲染页面
     render.mjs            拼图、静帧、整片渲染入口
     audio.mjs             按剧本合成音效
+    cover.html            横屏和竖屏封面
+    showcase/             成片与封面
+    references/           参考截图与早期提案
 creative_materials/       尚未归入具体制作风格的调研与创意资料
 ```
 

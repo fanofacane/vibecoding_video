@@ -11,6 +11,39 @@
 
 适合 AI 拟人对话、知识科普短片和带情感转折的小剧场。分镜与表演说明见 [STORYBOARD.md](STORYBOARD.md)。
 
+## 目录
+
+```text
+pixel-terminal/
+  README.md          本说明
+  STORYBOARD.md      《没有昨天》分镜、台词与科普核实
+  src/               剧本数据、画面、像素 Clawd、工具函数
+  studio.html        浏览器预览与离线渲染页面
+  cover.html         横屏和竖屏封面
+  render.mjs         渲染入口（拼图、静帧、整片、封面）
+  audio.mjs          按剧本合成音效
+  package.json       本风格的 Node.js 依赖（只有 puppeteer-core）
+  showcase/          已发布的成片与封面（提交 Git）
+  references/        参考截图与早期提案
+  out/               渲染中间结果，不提交 Git
+```
+
+本风格不依赖仓库里的其他目录，可以单独复制出去使用。
+
+## 成片
+
+| 文件 | 说明 |
+| --- | --- |
+| [showcase/没有昨天.mp4](showcase/没有昨天.mp4) | 1 分 52 秒，1920 × 1080，30 fps，H.264 + AAC |
+| [showcase/封面_横屏_16x9.png](showcase/封面_横屏_16x9.png) | 1920 × 1080 |
+| [showcase/封面_竖屏_9x16.png](showcase/封面_竖屏_9x16.png) | 1080 × 1920 |
+
+重新渲染后，把 `out/` 里的结果复制到 `showcase/` 再提交。
+
+## 参考资料
+
+`references/` 里是启发本风格的参考视频截图（第三方作品，仅作风格研究）和最早的风格提案。
+
 ## 文件
 
 | 文件 | 用途 |
