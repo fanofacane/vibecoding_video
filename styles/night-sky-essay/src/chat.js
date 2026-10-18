@@ -35,7 +35,7 @@ function bubble(ctx, it, x, y, a = 1) {
   const me = it.who === 'me';
   ctx.save(); ctx.globalAlpha *= a;
   roundRect(ctx, x, y, it.bw, it.bh, BUB.r);
-  if (me) { ctx.shadowColor = 'rgba(243,217,166,.38)'; ctx.shadowBlur = 26; }
+  if (me) { ctx.shadowColor = 'rgba(237,232,228,.42)'; ctx.shadowBlur = 26; }
   ctx.fillStyle = me ? COL.me : COL.them; ctx.fill();
   ctx.shadowColor = 'transparent';
   if (!me) { ctx.strokeStyle = 'rgba(255,255,255,.05)'; ctx.lineWidth = 1; ctx.stroke(); }

@@ -17,10 +17,10 @@ const SERIF = '"Noto Serif SC", "Songti SC", "SimSun", serif';
 const SANS = '"Noto Sans SC", "PingFang SC", "Microsoft YaHei", "WenQuanYi Zen Hei", sans-serif';
 
 const COL = {
-  bg0: '#050505', bg1: '#0b0b0b', bg2: '#131312',     // near-black with a warm grey lift in the middle
-  ink: '#ece6da', dim: '#8a857c', faint: '#4a4741',
-  me: '#ece4d6', meText: '#1a1814',                     // my bubbles: warm white, glowing
-  them: '#29292b', themText: '#d8d3ca',                 // their bubbles: dark grey
+  bg0: '#060709', bg1: '#0a0b0e', bg2: '#111216',     // cool near-black, a slight lift in the middle
+  ink: '#ece8e4', dim: '#8a8786', faint: '#4a4a4d',
+  me: '#ede8e4', meText: '#18181a',                     // my bubbles: cool off-white, glowing
+  them: '#232429', themText: '#d2d0d0',                 // their bubbles: cool dark grey
   warm: '#f3d9a6', line: 'rgba(236,230,218,.12)',
 };
 
