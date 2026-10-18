@@ -4,9 +4,10 @@
 //   A2  0:29  an ordinary friend: 127 days of silence → “在吗” → talking till 2 a.m. → same night, 9 vs 186 messages
 //   WL  0:54  the two windows copy into 50 in 3-D space; the camera dives in and the messages burst out
 //   TT  0:58  title
-//   SE  1:02  the sea of words: flight → collapse into brush-offs → only the unsaid remain
-//   R1–R4 1:18  four reasons, each: chapter card → animation → closing line
-//   A5  2:20  twist (“嗯，灯给你留着”), a real question, the sea lights up again, end card
+//   SE  1:02  the sea of words: flight → collapse into brush-offs; the words fall and become blocks
+//   Z   1:13  the explainer (charts and moving type, white): blocks → Gottman → formula → three factors
+//             (new information, curiosity, ease) → together → what to do
+//   EN  2:57  back to black: a real question, end card
 //
 // Every frame is a pure function of t. Scenes draw themselves when t is inside their window.
 
@@ -19,7 +20,7 @@ const dateDots = day => { const d = dayDate(day); return `${d.getUTCFullYear()} 
 const liveItems = (date, msgs) => [date, ...msgs.map(([at, who, text]) => ({ who, text, at }))];
 
 // Scene start times.
-const A1 = 0, A2 = 29.0, WL = 54.0, TT = 57.6, SE = 61.8, R1 = 78.0, RL = 15.5, A5 = R1 + 4 * RL, DUR = A5 + 44.5;
+const A1 = 0, A2 = 29.0, WL = 54.0, TT = 57.6, SE = 61.8, Z = SE + 11.0;   // Z: the explainer starts
 
 // ================================================================ shared pieces
 
@@ -394,250 +395,540 @@ function unsaidStars(ctx, t, a, light = {}, texts = UNSAID) {
 }
 
 function sceneSea(ctx, t) {
-  if (t < SE - .7 || t > R1 + .4) return;
-  const s = t - SE, a = seg(s, -.7, .5) * (1 - seg(t, R1 - .5, R1 + .3));
+  if (t < SE - .7 || t > Z + .4) return;
+  const s = t - SE, a = seg(s, -.7, .5) * (1 - seg(t, Z - .4, Z + .3));
   ctx.save(); ctx.globalAlpha *= a;
   backdrop(ctx, { t, stars: .6, lift: .4 });
   const cam = { x: -380 * s - 140 * Math.sin(s * .7), y: -260 * s, z: seaCamZ(t, SE) };
   const hole = { x: W / 2, y: 560, r: 600, k: (seg(s, .6, 1.2) * (1 - seg(s, 5.4, 6.0)) + seg(s, 7.0, 7.6)) };
-  sea3d(ctx, { t, cam, pool: POOL, big: BIG, collapse: { t0: SE + 5.6, to: SHORT }, a: 1 - .92 * seg(s, 10.0, 11.4), hole });
-  unsaidStars(ctx, t, seg(s, 10.6, 11.8));
+  sea3d(ctx, { t, cam, pool: POOL, big: BIG, collapse: { t0: SE + 5.6, to: SHORT }, a: 1 - seg(s, 9.6, 10.8), hole });
   ctx.restore();
   NC(ctx, t, '四年，十几万句话。', SE + .8, SE + 5.2, 500, { size: 66, halo: true });
   NC(ctx, t, '它们没有消失，', SE + 2.2, SE + 5.2, 600, { size: 40, color: COL.dim, halo: true });
   NC(ctx, t, '只是一层一层，沉在了这里。', SE + 3.1, SE + 5.2, 662, { size: 40, color: COL.dim, halo: true });
   NC(ctx, t, '到后来，说得最多的，', SE + 6.6, SE + 9.8, 470, { color: COL.dim, halo: true });
   NC(ctx, t, '嗯。好的。知道了。', SE + 7.6, SE + 9.8, 610, { size: 96, stagger: .2, tail: .45, halo: true });
-  NC(ctx, t, '而真正想说的，', SE + 11.6, R1 - .6, 520, { size: 50 });
-  NC(ctx, t, '一句也没有发出去。', SE + 12.6, R1 - .6, 600, { size: 50, color: COL.warm });
 }
 
-// ================================================================ R1–R4 · four reasons
 
-const chapterAt = n => R1 + n * RL;
+// ================================================================ the explainer: charts and moving type
 
-function sceneReasons(ctx, t) {
-  if (t < R1 - .3 || t > A5 + .4) return;
-  const n = clamp(Math.floor((t - R1) / RL), 0, 3), c = t - chapterAt(n);
-  const a = seg(t, R1 - .3, R1 + .3) * (1 - seg(t, A5 - .4, A5 + .2));
-  ctx.save(); ctx.globalAlpha *= a; backdrop(ctx, { t }); ctx.restore();
-  const cards = [
-    ['01', '新鲜事，是慢慢长出来的', '天天在一起的人，为什么越聊越少？'],
-    ['02', '越亲近，越有“应该”', '为什么跟最亲的人聊天，反而更累？'],
-    ['03', '熟悉，让人停止好奇', '以为都知道了，就不再问了'],
-    ['04', '距离，制造了话题', '为什么偶尔联系，反而有说不完的话？'],
-  ];
-  const [num, title, sub] = cards[n], T0 = chapterAt(n);
-  chapterCard(ctx, { t, t0: T0 + .2, out: T0 + 2.6, num, title, sub });
-  const va = seg(c, 2.9, 3.4) * (1 - seg(c, 12.2, 12.7));
-  if (va > 0) { ctx.save(); ctx.globalAlpha *= va; [reason1, reason2, reason3, reason4][n](ctx, t, T0); ctx.restore(); }
-  const closings = [['所以，普通朋友见面时，', '手里都捧着一整罐。'], ['恋人之间，每一句话都有分量，', '所以开口越来越难。'],
-    ['我不是不在乎，', '我只是，很久没问过了。'], ['重叠得越多，', '能告诉对方的，就越少。']];
-  closing(ctx, t, T0 + 12.6, T0 + RL, ...closings[n]);
+const S1 = Z + 9.0, S2 = Z + 10.4, S3 = Z + 25.0, S4 = Z + 30.0, S5 = Z + 41.0;   // flip, Gottman, formula, time, Granovetter
+const F2 = Z + 52.0, F3 = Z + 66.0, CB = Z + 82.0, AD = Z + 92.0, EN = Z + 105.0, ED = EN + 11.5, DUR = EN + 17.5;
+
+const P = { bg: '#eceef1', bg2: '#f6f7f9', ink: '#1c1e23', dim: '#878b94', faint: '#c9ccd2', blue: '#3d6cf0', pill: '#25272c' };
+const tag = (ctx, t, text, t0, x, y, o = {}) => label(ctx, text, { t, t0, x, y, size: 15, spacing: 2, color: P.dim, ...o });
+const count = (t, t0, t1, to, dec = 0) => (to * easeOut(seg(t, t0, t1))).toFixed(dec);
+const ink = (ctx, t, text, t0, x, y, o = {}) => narr(ctx, text, { t, t0, x, y, size: 40, color: P.ink, stagger: .045, ...o });
+
+function whiteBackdrop(ctx) {
+  const g = ctx.createRadialGradient(W * .5, H * .45, 100, W * .5, H * .5, W * .75);
+  g.addColorStop(0, P.bg2); g.addColorStop(1, P.bg);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
 }
-
-// 01: one cup a day, emptied the same day — versus a jar that fills over three months.
-function reason1(ctx, t, T0) {
-  ctx.fillStyle = COL.line; ctx.fillRect(960, 200, 1, 640);
-  label(ctx, '天 天 聊', { t, t0: T0 + 3.0, x: 480, y: 210, size: 20, align: 'center', color: COL.ink, spacing: 5 });
-  label(ctx, '隔 三 个 月 聊 一 次', { t, t0: T0 + 3.0, x: 1440, y: 210, size: 20, align: 'center', color: COL.ink, spacing: 5 });
-  dailyCups(ctx, { t, t0: T0 + 3.4, n: 7, x: 150, y: 700, gap: 110, dayDur: .9 });
-  storyJar(ctx, { t, t0: T0 + 3.6, t1: T0 + 9.6, cx: 1440, y: 760, items: ['换了工作', '搬了家', '养了只狗', '去了洱海', '学会做饭'], itemsAt: T0 + 8.6 });
-  NC(ctx, t, '天天聊，新鲜事刚冒出来，就说完了。', T0 + 3.6, T0 + 7.9, 950, { size: 38 });
-  NC(ctx, t, '隔一段时间，零碎的小事，才攒成一个故事。', T0 + 8.1, T0 + 12.3, 950, { size: 38 });
-}
-
-// 02: a read message and a clock that keeps running — versus “抱歉刚看到哈哈” two days later.
-function reason2(ctx, t, T0) {
-  const L = [[3.4, 'them', '在干嘛？'], [5.0, 'them', '？'], [5.8, 'them', '怎么不回'], [6.6, 'them', '已读不回是吧'], [7.3, 'them', '算了'], [7.9, 'me', '刚在开会……'], [8.5, 'them', '嗯']]
-    .map(([at, w, x]) => [T0 + at, w, x]);
-  const R = [[9.4, 'me', '抱歉刚看到哈哈'], [9.9, 'them', '没事！'], [10.3, 'them', '我也经常这样'], [10.8, 'them', '对了你上次说的那本书我看完了']].map(([at, w, x]) => [T0 + at, w, x]);
-  const left = liveItems({ date: '今天  15:02' }, L), right = [{ date: '6月12日  20:03' }, { who: 'them', text: '最近忙吗' }, { date: '两天后' , at: T0 + 9.0 }, ...R.map(([at, who, text]) => ({ who, text, at }))];
-  ctx.save(); ctx.translate(-30, 40); ctx.scale(.86, .86);
-  panel(ctx, { t, cx: 420, cy: 560, name: '小 鹿', items: left });
-  panel(ctx, { t, cx: 1810, cy: 560, name: '老 周', items: right, a: seg(t, T0 + 8.6, T0 + 9.2) });
+function bigNumber(ctx, text, x, y, size, color, a = 1, align = 'left') {
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha *= a;
+  ctx.font = `400 ${size}px ${SERIF}`; ctx.fillStyle = color; ctx.textBaseline = 'alphabetic'; ctx.textAlign = align;
+  ctx.fillText(text, x, y);
   ctx.restore();
-  // The clock in the middle: how long the reply has kept her waiting.
-  const wait = t < T0 + 7.9 ? lerp(0, 47 * 60 + 12, easeIn(seg(t, T0 + 3.6, T0 + 7.9))) : 47 * 60 + 12;
-  const showL = seg(t, T0 + 3.5, T0 + 3.9) * (1 - seg(t, T0 + 8.6, T0 + 9.0)), showR = seg(t, T0 + 9.0, T0 + 9.4);
-  ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillStyle = COL.ink;
-  if (showL > 0) {
-    ctx.globalAlpha *= showL;
-    label(ctx, '她 在 等 你 回 复', { t: 9, t0: 0, x: W / 2 + 40, y: 420, size: 18, align: 'center' });
-    ctx.font = `500 96px ${SERIF}`; ctx.fillStyle = t > T0 + 6 ? '#e8b4a8' : COL.ink;
-    const s = Math.floor(wait); ctx.fillText(`${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`, W / 2 + 40, 530);
-    ctx.globalAlpha /= showL;
+}
+function bracket(ctx, x0, x1, y, k, color, down = true) {
+  if (k <= 0) return;
+  const d = down ? 8 : -8;
+  ctx.strokeStyle = color; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(x0, y + d); ctx.lineTo(x0, y); ctx.lineTo(lerp(x0, x1, k), y); if (k > .98) ctx.lineTo(x1, y + d); ctx.stroke();
+}
+
+// ---------------------------------------------------------------- blocks (dark): what the messages carried
+
+// One block = 10 messages. Lovers: 4200 blocks over 1460 days; the share that only “keeps in touch” grows.
+const LB = { x: 880, y: 560, cols: 140, rows: 30, cell: 6.4 };
+const FB = { x: 880, y: 380, n: 19 };
+const maintainShare = day => clamp(.15 + .8 * (day / 1460) ** .7, 0, .96);
+
+function sceneBlocks(ctx, t) {
+  const l = t - Z;
+  // The brush-offs of the sea fall and settle into the lovers' band.
+  for (let i = 0; i < 260; i++) {
+    const t0 = Z - 1.2 + hash(i) * .8, k = seg(t, t0, t0 + 1.3);
+    if (k <= 0 || k >= 1) continue;
+    const c = Math.floor(hash(i + 3) * LB.cols), r = Math.floor(hash(i + 5) * LB.rows);
+    const sx = hash(i + 7) * W, sy = hash(i + 9) * H * .7, e = easeInOut(k);
+    ctx.globalAlpha = (1 - seg(k, .85, 1)) * .9; ctx.fillStyle = hash(i) < .6 ? P.blue : COL.ink;
+    const sz = lerp(10, LB.cell - 1.4, e);
+    ctx.fillRect(lerp(sx, LB.x + c * LB.cell, e), lerp(sy, LB.y + r * LB.cell, e), sz, sz);
   }
-  if (showR > 0) {
-    ctx.globalAlpha *= showR;
-    label(ctx, '他 隔 了', { t: 9, t0: 0, x: W / 2 + 40, y: 420, size: 18, align: 'center' });
-    ctx.font = `500 96px ${SERIF}`; ctx.fillText('2 天', W / 2 + 40, 530);
-    label(ctx, '谁 也 没 有 介 意', { t: 9, t0: 0, x: W / 2 + 40, y: 580, size: 18, align: 'center' });
+  ctx.globalAlpha = 1;
+  label(ctx, '老 朋 友', { t: l, t0: .4, x: FB.x, y: FB.y - 22, size: 16, color: COL.ink, spacing: 3 });
+  label(ctx, `1 个 晚 上  ·  ${count(l, .6, 2.2, 186)} 条`, { t: l, t0: .6, x: FB.x + 110, y: FB.y - 22, size: 15, color: COL.dim, spacing: 1.5 });
+  label(ctx, '恋 人', { t: l, t0: .8, x: LB.x, y: LB.y - 22, size: 16, color: COL.ink, spacing: 3 });
+  label(ctx, `1460 天  ·  约 ${Number(count(l, 1.0, 3.2, 42000)).toLocaleString('en-US')} 条`, { t: l, t0: 1.0, x: LB.x + 90, y: LB.y - 22, size: 15, color: COL.dim, spacing: 1.5 });
+  label(ctx, '每 格 = 10 条 消 息  ·  片 中 示 例', { t: l, t0: 1.4, x: LB.x + LB.cols * LB.cell, y: LB.y + LB.rows * LB.cell + 70, size: 13, color: COL.faint, align: 'right' });
+  for (let i = 0; i < FB.n; i++) {
+    const k = seg(l, .6 + i * .05, .9 + i * .05); if (k <= 0) continue;
+    ctx.globalAlpha = k; ctx.fillStyle = COL.ink;
+    ctx.fillRect(FB.x + i * LB.cell, FB.y, LB.cell - 1.4, LB.cell - 1.4);
   }
-  ctx.restore();
-  NC(ctx, t, '晚回一会儿要解释，说错一句要哄。', T0 + 4.2, T0 + 8.6, 1010, { size: 36 });
-  NC(ctx, t, '普通朋友之间，没有这本账。', T0 + 9.6, T0 + 12.3, 1010, { size: 36 });
+  const sweep = seg(l, 3.6, 7.0);
+  for (let c = 0; c < LB.cols; c++) {
+    const day = (c + .5) / LB.cols * 1460, show = seg(l, 1.0 + c * .016, 1.3 + c * .016);
+    if (show <= 0) continue;
+    const coloured = sweep * LB.cols > c;
+    for (let r = 0; r < LB.rows; r++) {
+      const isMaint = hash(c * 31 + r * 7) < maintainShare(day);
+      ctx.globalAlpha = show * (coloured ? 1 : .55);
+      ctx.fillStyle = coloured && isMaint ? P.blue : COL.ink;
+      ctx.fillRect(LB.x + c * LB.cell, LB.y + r * LB.cell, LB.cell - 1.4, LB.cell - 1.4);
+    }
+  }
+  ctx.globalAlpha = 1;
+  const lk = seg(l, 3.8, 7.0);
+  if (lk > 0) {
+    ctx.save(); ctx.strokeStyle = COL.ink; ctx.lineWidth = 2; ctx.beginPath();
+    for (let c = 0; c <= LB.cols * lk; c++) {
+      const v = 1 - maintainShare(c / LB.cols * 1460), x = LB.x + c * LB.cell, y = LB.y - 20 - 90 * v;
+      c ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    }
+    ctx.stroke(); ctx.restore();
+    label(ctx, '带 新 内 容 的 消 息 占 比', { t: l, t0: 4.0, x: LB.x, y: LB.y - 118, size: 13, color: COL.dim });
+  }
+  const x0 = LB.x + LB.cols * LB.cell * .3, x1 = LB.x + LB.cols * LB.cell, yb = LB.y + LB.rows * LB.cell + 14;
+  bracket(ctx, x0, x1, yb, easeOut(seg(l, 6.4, 7.2)), P.blue, false);
+  label(ctx, '维 持 联 系', { t: l, t0: 6.8, x: (x0 + x1) / 2, y: yb + 30, size: 16, align: 'center', color: P.blue, spacing: 3 });
+  label(ctx, '一 个 常 见 的 解 释 ：', { t: l, t0: 1.6, x: 140, y: 440, size: 18, color: COL.dim });
+  narr(ctx, '“到了”“嗯”“晚安”', { t: l, t0: 2.2, x: 136, y: 520, size: 50, stagger: .06 });
+  narr(ctx, [['只是在', COL.ink], ['维持联系', P.blue], ['，', COL.ink]], { t: l, t0: 3.4, x: 136, y: 592, size: 50, stagger: .06 });
+  narr(ctx, '不算真正的交流。', { t: l, t0: 4.6, x: 136, y: 664, size: 50, stagger: .06 });
+  label(ctx, '语 言 学 里 叫 “ 寒 暄 交 流 ”', { t: l, t0: 6.2, x: 140, y: 740, size: 15, color: COL.dim });
+  label(ctx, 'phatic communion  ·  Malinowski, 1923', { t: l, t0: 6.5, x: 140, y: 768, size: 14, color: COL.faint, spacing: 1 });
 }
 
-// 03: the iceberg — what shows above the water, and the sea of words below it.
-function reason3(ctx, t, T0) {
-  const dive = easeInOut(seg(t, T0 + 6.6, T0 + 8.4)), off = dive * 760, WY = 560 - off;
-  ctx.save();
-  // Water below the line.
-  const g = ctx.createLinearGradient(0, WY, 0, WY + 1400);
-  g.addColorStop(0, 'rgba(40,52,66,.35)'); g.addColorStop(1, 'rgba(8,10,14,.2)');
-  ctx.fillStyle = g; ctx.fillRect(0, WY, W, H + 800);
-  ctx.fillStyle = 'rgba(237,232,228,.35)'; ctx.fillRect(0, WY, W, 1.5);
-  // The iceberg: a small peak above the line, a huge body below.
-  ctx.beginPath();
-  ctx.moveTo(800, WY); ctx.lineTo(880, WY - 120); ctx.lineTo(960, WY - 190); ctx.lineTo(1040, WY - 110); ctx.lineTo(1120, WY);
-  ctx.lineTo(1380, WY + 380); ctx.lineTo(1440, WY + 760); ctx.lineTo(1180, WY + 1150); ctx.lineTo(760, WY + 1180); ctx.lineTo(500, WY + 820); ctx.lineTo(560, WY + 380); ctx.closePath();
-  ctx.fillStyle = 'rgba(237,232,228,.05)'; ctx.fill(); ctx.strokeStyle = 'rgba(237,232,228,.4)'; ctx.lineWidth = 2; ctx.stroke();
-  ctx.restore();
-  const above = [['加班', 700, WY - 140], ['点外卖', 1220, WY - 120], ['追剧', 760, WY - 40], ['睡前刷手机', 1210, WY - 30]];
-  above.forEach(([txt, x, y], i) => label(ctx, txt, { t, t0: T0 + 3.4 + i * .3, x, y, size: 26, align: 'center', color: COL.ink, spacing: 2 }));
-  // Under water: lines that keep changing.
-  const under = [[960, 340], [700, 520], [1180, 600], [860, 760], [1080, 880], [640, 940]];
-  ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  under.forEach(([x, y], i) => {
-    const k = seg(t, T0 + 7.6 + i * .25, T0 + 8.4 + i * .25);
-    if (k <= 0) return;
-    ctx.globalAlpha = k * .9;
-    ctx.font = `400 ${30 + (i % 2) * 6}px ${SERIF}`; ctx.fillStyle = '#d9d4ce';
-    ctx.shadowColor = 'rgba(237,232,228,.35)'; ctx.shadowBlur = 16;
-    ctx.fillText(starText(i * 11 + 3, t * .9, UNSAID, UNSAID, null).text, x, y + 760 - off);
-  });
-  ctx.restore();
-  NC(ctx, t, '天天在身边，我以为她的生活，我都知道。', T0 + 3.6, T0 + 6.6, 1000, { size: 38, halo: true });
-  NC(ctx, t, '可水面以下，她一直在变——', T0 + 8.6, T0 + 12.3, 160, { size: 44, halo: true });
-  NC(ctx, t, '想什么，怕什么，开始期待什么。', T0 + 9.6, T0 + 12.3, 225, { size: 34, color: COL.dim, halo: true });
+// A wave of tiles flips across the frame; each tile changes colour as it turns over.
+function flip(ctx, t, t0, t1, from, to, reverse = false) {
+  const k = seg(t, t0, t1), cs = 120;
+  for (let gx = 0; gx < W / cs; gx++) for (let gy = 0; gy < Math.ceil(H / cs); gy++) {
+    const fx = reverse ? 1 - gx / (W / cs) : gx / (W / cs);
+    const d = fx * .7 + hash(gx * 13 + gy) * .15, p = seg(k, d, d + .25);
+    if (p <= 0) continue;
+    const sy = Math.abs(Math.cos(Math.PI * p));
+    ctx.fillStyle = p < .5 ? from : to;
+    ctx.fillRect(gx * cs, gy * cs + cs / 2 * (1 - sy), cs + 1, cs * sy + 1);
+  }
 }
 
-// 04: two lives as circles — lovers almost fully overlapping, friends drifting apart and growing things to tell.
-function reason4(ctx, t, T0) {
-  const card = seg(t, T0 + 9.6, T0 + 10.2);
-  ctx.save(); ctx.globalAlpha *= 1 - .8 * card;
-  ctx.fillStyle = COL.line; ctx.fillRect(960, 200, 1, 640);
-  label(ctx, '恋 人', { t, t0: T0 + 3.0, x: 480, y: 210, size: 20, align: 'center', color: COL.ink, spacing: 5 });
-  label(ctx, '普 通 朋 友', { t, t0: T0 + 3.0, x: 1440, y: 210, size: 20, align: 'center', color: COL.ink, spacing: 5 });
-  const circle = (x, y, r, fill) => { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = fill; ctx.fill(); ctx.strokeStyle = 'rgba(237,232,228,.55)'; ctx.lineWidth = 2; ctx.stroke(); };
-  const grow = easeOut(seg(t, T0 + 3.2, T0 + 4.0));
-  // Lovers: almost the same circle.
-  circle(450, 520, 190 * grow, 'rgba(237,232,228,.06)'); circle(510, 520, 190 * grow, 'rgba(237,232,228,.06)');
-  label(ctx, '嗯', { t, t0: T0 + 5.0, x: 480, y: 528, size: 24, align: 'center', color: COL.dim });
-  // Friends: drift apart over “three months”; the parts that no longer overlap fill with things to tell.
-  const apart = easeInOut(seg(t, T0 + 4.4, T0 + 7.2)), dx = lerp(30, 150, apart);
-  circle(1440 - dx, 520, 190 * grow, 'rgba(237,232,228,.06)'); circle(1440 + dx, 520, 190 * grow, 'rgba(237,232,228,.06)');
-  const chips = [['换了工作', -1], ['去了雪山', -1], ['老王结婚了', -1], ['养了只狗', 1], ['开了民宿', 1], ['想你来大理', 1]];
-  chips.forEach(([txt, side], i) => {
-    const k = seg(t, T0 + 6.4 + i * .3, T0 + 6.9 + i * .3);
-    if (k <= 0) return;
-    const row = i % 3, x = 1440 + side * (dx + 70), y = 440 + row * 80;
-    label(ctx, txt, { t: 9, t0: 0, x, y, size: 22, align: 'center', color: COL.warm, spacing: 1 });
-  });
-  label(ctx, '三 个 月', { t, t0: T0 + 4.6, out: T0 + 7.6, x: 1440, y: 790, size: 16, align: 'center' });
-  ctx.restore();
-  NC(ctx, t, '天天在一起，两个人的生活几乎完全重叠。', T0 + 3.6, T0 + 6.4, 900, { size: 36 });
-  NC(ctx, t, '分开一阵，就各自长出了对方不知道的部分。', T0 + 6.6, T0 + 9.5, 900, { size: 36 });
-  // The research card.
-  if (card > 0) {
-    ctx.save(); ctx.globalAlpha *= card;
-    roundRect(ctx, 380, 330, 1160, 380, 18); ctx.fillStyle = 'rgba(12,13,17,.94)'; ctx.fill(); ctx.strokeStyle = 'rgba(243,217,166,.5)'; ctx.lineWidth = 2; ctx.stroke();
-    label(ctx, '一 项 研 究', { t: 9, t0: 0, x: 450, y: 395, size: 18, color: COL.warm, spacing: 4 });
+// ---------------------------------------------------------------- Gottman
+
+function bidGrid(ctx, t, x0, y0, rate, t0, seed, cols = 10, rows = 10, gx = 50, gy = 30) {
+  const n = cols * rows, order = Array.from({ length: n }, (_, i) => i).sort((a, b) => hash(a + seed) - hash(b + seed));
+  const rank = new Map(order.map((v, i) => [v, i])), need = Math.round(rate * n / 100);
+  for (let i = 0; i < n; i++) {
+    const c = i % cols, r = Math.floor(i / cols), x = x0 + c * gx, y = y0 + r * gy;
+    const k = easeOut(seg(t, t0 + i * .012, t0 + i * .012 + .3));
+    if (k <= 0) continue;
+    ctx.save(); ctx.globalAlpha *= k;
+    roundRect(ctx, x, y, 34 * k, 12, 6); ctx.fillStyle = P.pill; ctx.fill();
     ctx.restore();
-    narr(ctx, '研究者让人重新联系多年没联系的旧识，', { t, t0: T0 + 10.0, out: T0 + 12.3, x: 450, y: 480, size: 40 });
-    narr(ctx, '发现他们常常带来比身边人更新鲜的信息。', { t, t0: T0 + 10.6, out: T0 + 12.3, x: 450, y: 550, size: 40, color: COL.warm });
-    label(ctx, 'Levin,  Walter  &  Murnighan,  2011,  Dormant Ties: The Value of Reconnecting', { t, t0: T0 + 11.0, out: T0 + 12.3, x: 450, y: 650, size: 15, spacing: .5 });
+    const rk = rank.get(i), dt = t0 + 1.6 + rk * .028;
+    if (rk < need && t > dt) { const p = backOut(seg(t, dt, dt + .25)); ctx.fillStyle = P.blue; ctx.beginPath(); ctx.arc(x + 42, y + 6, 4.2 * p, 0, 7); ctx.fill(); }
+  }
+}
+const caughtAt = (t, t0, rate) => Math.min(rate, Math.max(0, Math.floor((t - t0 - 1.6) / .028) + 1));
+
+function sceneGottman(ctx, t) {
+  if (t < S2 || t > S3 + .2) return;
+  const out = 1 - seg(t, S3 - .6, S3);
+  ctx.save(); ctx.globalAlpha *= out;
+  ink(ctx, t, '这只说对了一半。', S2 + .3, 140, 150, { stagger: .07 });
+  tag(ctx, t, 'G O T T M A N   ·   新 婚 夫 妻 追 踪 研 究', S2 + 1.2, 142, 212);
+  ink(ctx, t, '一方随口“搭话”时，另一方有没有接住——', S2 + 1.5, 140, 268, { size: 34, stagger: .035 });
+  ink(ctx, t, '6 年后回访：', S2 + 2.9, 140, 318, { size: 34 });
+  ctx.save(); ctx.globalAlpha *= seg(t, S2 + 2.6, S2 + 3.0);
+  roundRect(ctx, 1520, 200, 30, 11, 5.5); ctx.fillStyle = P.pill; ctx.fill();
+  ctx.fillStyle = P.blue; ctx.beginPath(); ctx.arc(1535, 232, 4, 0, 7); ctx.fill();
+  ctx.restore();
+  tag(ctx, t, '一 次 搭 话', S2 + 2.7, 1566, 211, { color: P.ink });
+  tag(ctx, t, '被 接 住', S2 + 2.8, 1566, 238, { color: P.ink });
+  const g0 = S2 + 3.4;
+  tag(ctx, t, '仍 在 一 起 的 夫 妻', g0, 142, 395, { color: P.ink, size: 16 });
+  tag(ctx, t, '已 经 离 婚 的 夫 妻', g0 + .4, 1002, 395, { color: P.ink, size: 16 });
+  bidGrid(ctx, t, 140, 420, 86, g0, 11);
+  bidGrid(ctx, t, 1000, 420, 33, g0 + .4, 47);
+  bigNumber(ctx, `${caughtAt(t, g0, 86)}%`, 670, 700, 120, P.blue, seg(t, g0 + 1.4, g0 + 1.8));
+  bigNumber(ctx, `${caughtAt(t, g0 + .4, 33)}%`, 1530, 700, 120, P.ink, seg(t, g0 + 1.8, g0 + 2.2));
+  tag(ctx, t, '的 搭 话 被 接 住', g0 + 1.6, 674, 732, { size: 13 });
+  tag(ctx, t, '的 搭 话 被 接 住', g0 + 2.0, 1534, 732, { size: 13 });
+  tag(ctx, t, '数 据 ： Gottman 实 验 室 ， 130 对 新 婚 夫 妻 ， 6 年 后 回 访', g0 + 2.6, 142, 1030, { size: 12, color: P.faint, spacing: 1 });
+  narr(ctx, [['“废话”没有错，它们是关系的', P.ink], ['脉搏', P.blue], ['。', P.ink]], { t, t0: S2 + 8.4, x: 140, y: 860, size: 40, stagger: .05 });
+  ctx.restore();
+  const k = seg(t, S2 + 11.2, S2 + 11.6);
+  if (k > 0) {
+    ctx.save(); ctx.globalAlpha *= k * out; whiteBackdrop(ctx); ctx.restore();
+    narr(ctx, '所以问题不在“废话”太多，', { t, t0: S2 + 11.6, out: S3 - .5, x: W / 2, y: 500, size: 52, align: 'center', color: P.ink, stagger: .05 });
+    narr(ctx, [['而在——', P.ink], ['新东西太少', P.blue], ['。', P.ink]], { t, t0: S2 + 12.6, out: S3 - .5, x: W / 2, y: 600, size: 52, align: 'center', stagger: .08 });
   }
 }
 
-// ================================================================ A5 · twist and ending
+// ---------------------------------------------------------------- the formula, and its three factors
 
-const E1 = A5, E2 = A5 + 10.5, E3 = A5 + 31.0, E4 = A5 + 39.0;
-const NIGHT = liveItems({ date: '2026年10月16日  01:12' }, [[E1 + 1.6, 'me', '加班到现在，刚出公司'], [E1 + 3.2, 'them', '嗯，灯给你留着']]);
+const FACTORS = ['新 信 息', '好 奇 心', '轻 松'];
+// Factor levels once each section has been explained: [daily, occasional].
+const LEVELS = [[.12, .92], [.25, .85], [.2, .9]];
+const FACTOR_DONE = [S5 + 9.5, F3 - 1.5, CB - 1.5];
+
+function formula(ctx, t, t0, y, size, a = 1) {
+  const parts = [['话题', P.ink, 0], ['≈', P.dim, .4], ['新信息', P.blue, .8], ['×', P.dim, 1.3], ['好奇心', P.blue, 1.6], ['×', P.dim, 2.1], ['轻松', P.blue, 2.4]];
+  ctx.save(); ctx.globalAlpha *= a;
+  ctx.font = `500 ${size}px ${SERIF}`; ctx.textBaseline = 'alphabetic';
+  const gap = size * .45, widths = parts.map(([s]) => ctx.measureText(s).width), total = widths.reduce((s, w) => s + w, 0) + gap * (parts.length - 1);
+  let x = W / 2 - total / 2;
+  parts.forEach(([s, c, d], i) => {
+    const k = easeOut(seg(t, t0 + d, t0 + d + .5));
+    ctx.save(); ctx.globalAlpha *= k; ctx.fillStyle = c; ctx.fillText(s, x, y - (1 - k) * 40); ctx.restore();
+    x += widths[i] + gap;
+  });
+  ctx.restore();
+}
+
+function sceneFormula(ctx, t) {
+  const a = seg(t, S3, S3 + .3) * (1 - seg(t, S4 - .5, S4));
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha *= a;
+  formula(ctx, t, S3 + .3, 470, 76);
+  FACTORS.forEach((s, i) => {
+    const bx = 560 + i * 300, k = seg(t, S3 + 2.8 + i * .2, S3 + 3.2 + i * .2);
+    ctx.save(); ctx.globalAlpha *= k; ctx.strokeStyle = P.faint; ctx.lineWidth = 1.5; roundRect(ctx, bx, 600, 220, 14, 7); ctx.stroke(); ctx.restore();
+    tag(ctx, t, s, S3 + 2.8 + i * .2, bx + 110, 650, { align: 'center', color: P.ink, size: 16 });
+  });
+  ctx.restore();
+}
+
+// Small panel in the top-right corner while the three factors are explained: two thin bars per factor.
+function factorHud(ctx, t) {
+  const a = seg(t, S4 + .2, S4 + .8) * (1 - seg(t, CB - .6, CB - .1));
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha *= a;
+  const x = 1440, y = 70;
+  tag(ctx, t, '天 天 联 系', 0, x, y + 6, { size: 12, color: P.ink });
+  tag(ctx, t, '偶 尔 联 系', 0, x + 170, y + 6, { size: 12, color: P.blue });
+  FACTORS.forEach((s, i) => {
+    const yy = y + 34 + i * 30, k = easeOut(seg(t, FACTOR_DONE[i], FACTOR_DONE[i] + .8));
+    tag(ctx, t, s, 0, x - 20, yy + 9, { size: 12, align: 'right', color: P.ink });
+    for (const [j, col] of [[0, P.ink], [1, P.blue]]) {
+      const bx = x + j * 170;
+      ctx.fillStyle = 'rgba(28,30,35,.08)'; ctx.fillRect(bx, yy, 140, 8);
+      ctx.fillStyle = col; ctx.fillRect(bx, yy, 140 * LEVELS[i][j] * k, 8);
+    }
+  });
+  ctx.restore();
+}
+
+// ---------------------------------------------------------------- factor 1: new information needs time
+
+const AX = { x0: 220, x1: 1700, y0: 860, y1: 400, days: 90, max: 36 };
+const ramp = d => 60 * (1 - Math.exp(-d / 120));
+const daily = d => (d % 1) * 2.6;   // a day's worth of news, exaggerated so the teeth are visible
+
+function sceneArea(ctx, t) {
+  const a = seg(t, S4, S4 + .4) * (1 - seg(t, S5 - .6, S5));
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha *= a;
+  const X = d => AX.x0 + (AX.x1 - AX.x0) * d / AX.days, Y = v => AX.y0 - (AX.y0 - AX.y1) * v / AX.max;
+  tag(ctx, t, '因 素 一  ·  新 信 息', S4 + .1, 142, 92, { color: P.blue });
+  const ax = easeOut(seg(t, S4 + .2, S4 + .9));
+  ctx.strokeStyle = P.ink; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(AX.x0, AX.y0); ctx.lineTo(lerp(AX.x0, AX.x1, ax), AX.y0); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(AX.x0, AX.y0); ctx.lineTo(AX.x0, lerp(AX.y0, AX.y1 - 30, ax)); ctx.stroke();
+  [0, 30, 60, 90].forEach((d, i) => tag(ctx, t, String(d), S4 + .5 + i * .1, X(d), AX.y0 + 34, { align: 'center', color: P.ink, size: 15 }));
+  tag(ctx, t, '距 离 上 次 聊 天 的 天 数', S4 + .8, AX.x1, AX.y0 + 72, { align: 'right' });
+  tag(ctx, t, '可 以 分 享 的 新 鲜 事', S4 + .8, AX.x0 - 6, AX.y1 - 48);
+  tag(ctx, t, '示 意', S4 + .8, AX.x1, AX.y1 - 48, { align: 'right', color: P.faint });
+  const reveal = easeInOut(seg(t, S4 + 1.2, S4 + 5.2)) * AX.days;
+  if (reveal > 0) {
+    ctx.beginPath(); ctx.moveTo(X(0), Y(0));
+    for (let d = 0; d <= reveal; d += .5) ctx.lineTo(X(d), Y(ramp(d)));
+    ctx.lineTo(X(reveal), Y(0)); ctx.closePath(); ctx.fillStyle = 'rgba(61,108,240,.12)'; ctx.fill();
+    ctx.beginPath(); for (let d = 0; d <= reveal; d += .5) d ? ctx.lineTo(X(d), Y(ramp(d))) : ctx.moveTo(X(d), Y(ramp(d)));
+    ctx.strokeStyle = P.blue; ctx.lineWidth = 3; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(X(0), Y(0));
+    for (let d = 0; d <= reveal; d += .05) ctx.lineTo(X(d), Y(daily(d)));
+    ctx.strokeStyle = P.ink; ctx.lineWidth = 1.6; ctx.stroke();
+  }
+  if (t > S4 + 4.6) {
+    ctx.save(); ctx.globalAlpha *= seg(t, S4 + 4.6, S4 + 5.0);
+    ctx.strokeStyle = P.ink; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(X(40), Y(0) - 14); ctx.lineTo(X(40) + 40, Y(0) - 70); ctx.stroke();
+    ctx.restore();
+    tag(ctx, t, '天 天 联 系 ： 每 次 聊 天 都 清 零', S4 + 4.6, X(40) + 48, Y(0) - 76, { color: P.ink, size: 16 });
+  }
+  if (t > S4 + 5.2) {
+    ctx.save(); ctx.globalAlpha *= seg(t, S4 + 5.2, S4 + 5.6);
+    ctx.fillStyle = P.blue; ctx.beginPath(); ctx.arc(X(90), Y(ramp(90)), 6, 0, 7); ctx.fill();
+    ctx.restore();
+    tag(ctx, t, '三 个 月 联 系 一 次', S4 + 5.2, X(90) - 12, Y(ramp(90)) - 26, { color: P.blue, size: 16, align: 'right' });
+  }
+  ink(ctx, t, '天天聊，新鲜事刚冒出来，就说完了；', S4 + 1.6, 140, 170);
+  narr(ctx, [['隔一段时间，零碎的小事，才', P.ink], ['攒成一个故事', P.blue], ['。', P.ink]], { t, t0: S4 + 5.4, x: 140, y: 235, size: 40, stagger: .045 });
+  ctx.restore();
+}
+
+function sceneBars(ctx, t) {
+  const a = seg(t, S5, S5 + .4) * (1 - seg(t, F2 - .6, F2));
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha *= a;
+  tag(ctx, t, 'G R A N O V E T T E R   ·   1 9 7 3   ·   找 到 新 工 作 的 人', S5 + .2, 142, 130);
+  ink(ctx, t, '那条关键的消息，是谁告诉你的？', S5 + .5, 140, 200, { size: 44, stagger: .05 });
+  const bars = [['经 常 见 面', '每 周 至 少 两 次', 16.7, P.ink], ['偶 尔 见 面', '一 年 一 次 以 上', 55.6, P.blue], ['很 少 见 面', '一 年 一 次 或 更 少', 27.8, P.blue]];
+  const base = 860, hmax = 460, bw = 220;
+  bars.forEach(([name, sub, v, c], i) => {
+    const x = 480 + i * 400, t0 = S5 + 1.6 + i * .35, k = easeOut(seg(t, t0, t0 + 1.0)), h = hmax * v / 60 * k;
+    ctx.fillStyle = c; ctx.fillRect(x, base - h, bw, h);
+    if (k > 0) bigNumber(ctx, `${(v * k).toFixed(1)}%`, x, base - h - 20, 64, c);
+    tag(ctx, t, name, t0, x + bw / 2, base + 40, { align: 'center', color: P.ink, size: 18 });
+    tag(ctx, t, sub, t0, x + bw / 2, base + 68, { align: 'center', size: 13 });
+  });
+  ctx.fillStyle = P.ink; ctx.fillRect(420, base, 1160 * easeOut(seg(t, S5 + 1.2, S5 + 1.8)), 1.5);
+  const bk = easeOut(seg(t, S5 + 4.0, S5 + 4.8)), x0 = 880, x1 = 1300 + bw, yb = base - hmax * 55.6 / 60 - 120;
+  bracket(ctx, x0, x1, yb, bk, P.blue);
+  bigNumber(ctx, '84%', (x0 + x1) / 2 - 90, yb - 24, 80, P.blue, seg(t, S5 + 4.6, S5 + 5.0));
+  tag(ctx, t, '来 自 不 常 见 面 的 人', S5 + 4.9, (x0 + x1) / 2 + 110, yb - 40, { color: P.blue, size: 16 });
+  tag(ctx, t, '基 数 ： 通 过 熟 人 找 到 工 作 的 54 人', S5 + 3.0, 1780, 1036, { size: 12, color: P.faint, spacing: 1, align: 'right' });
+  narr(ctx, '另一项研究发现：重新联系多年没联系的旧识，得到的信息比现有联系人更新颖。', { t, t0: S5 + 6.2, x: 140, y: 1000, size: 26, color: P.dim, stagger: .02 });
+  tag(ctx, t, 'Levin, Walter & Murnighan, 2011', S5 + 7.4, 142, 1036, { size: 13, spacing: 1, color: P.faint });
+  ctx.restore();
+}
+
+// ---------------------------------------------------------------- factor 2: curiosity — closeness makes us assume
+
+function sceneCuriosity(ctx, t) {
+  const a = seg(t, F2, F2 + .4) * (1 - seg(t, F3 - .6, F3));
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha *= a;
+  tag(ctx, t, '因 素 二  ·  好 奇 心', F2 + .1, 142, 92, { color: P.blue });
+  ink(ctx, t, '越亲近，越容易觉得——', F2 + .4, 140, 170);
+  narr(ctx, [['“', P.ink], ['不用说你也懂', P.blue], ['”。', P.ink]], { t, t0: F2 + 1.4, x: 140, y: 240, size: 56, stagger: .08 });
+  tag(ctx, t, 'S A V I T S K Y   等   ·   2 0 1 1   ·   亲 密 沟 通 偏 差', F2 + 2.4, 142, 320);
+  ink(ctx, t, '实验：用一句有歧义的话，分别向配偶和陌生人传达一个特定的意思。', F2 + 2.8, 140, 372, { size: 26, color: P.dim, stagger: .02 });
+  // Two groups of bars: expected vs actual understanding.
+  const base = 880, hmax = 380, bw = 150;
+  const groups = [['以 为 对 方 能 懂', 640, [[.9, P.blue, '配 偶'], [.55, P.faint, '陌 生 人']], F2 + 4.2], ['实 际 听 懂', 1220, [[.55, P.blue, '配 偶'], [.55, P.faint, '陌 生 人']], F2 + 5.6]];
+  groups.forEach(([name, gx, bars, t0]) => {
+    bars.forEach(([v, c, who], j) => {
+      const x = gx + j * (bw + 30), k = easeOut(seg(t, t0 + j * .25, t0 + j * .25 + .9)), h = hmax * v * k;
+      ctx.fillStyle = c; ctx.fillRect(x, base - h, bw, h);
+      tag(ctx, t, who, t0 + j * .25, x + bw / 2, base + 32, { align: 'center', size: 14, color: P.ink });
+    });
+    tag(ctx, t, name, t0, gx + bw + 15, base + 72, { align: 'center', size: 17, color: P.ink });
+  });
+  ctx.fillStyle = P.ink; ctx.fillRect(560, base, 1000 * easeOut(seg(t, F2 + 3.8, F2 + 4.4)), 1.5);
+  // The gap: how much closeness inflates the expectation.
+  const gk = easeOut(seg(t, F2 + 7.0, F2 + 7.8));
+  if (gk > 0) {
+    const ya = base - hmax * .9, yb = base - hmax * .55, xa = 640 + bw / 2, xb = 1220 + bw / 2;
+    ctx.save(); ctx.setLineDash([6, 6]); ctx.strokeStyle = P.blue; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(xa, ya); ctx.lineTo(lerp(xa, xb, gk), ya); ctx.stroke(); ctx.setLineDash([]);
+    if (gk > .95) {
+      ctx.beginPath(); ctx.moveTo(xb, ya); ctx.lineTo(xb, yb - 6); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(xb - 7, yb - 14); ctx.lineTo(xb, yb - 4); ctx.lineTo(xb + 7, yb - 14); ctx.stroke();
+    }
+    ctx.restore();
+    tag(ctx, t, '高 估', F2 + 7.6, xb + 22, (ya + yb) / 2 + 6, { color: P.blue, size: 18 });
+  }
+  tag(ctx, t, '示 意 ： 柱 高 只 表 示 结 论 。 原 文 ： 对 配 偶 和 对 陌 生 人 的 实 际 准 确 率 ， 统 计 上 没 有 差 别', F2 + 6.4, 1780, 1036, { size: 12, color: P.faint, spacing: 1, align: 'right' });
+  ink(ctx, t, '天天在一起，我们停止了追问，', F2 + 8.6, 140, 980, { size: 36 });
+  narr(ctx, [['因为', P.ink], ['以为自己都知道', P.blue], ['。', P.ink]], { t, t0: F2 + 10.0, x: 660, y: 980, size: 36, stagger: .05 });
+  ctx.restore();
+}
+
+// ---------------------------------------------------------------- factor 3: ease — expectation vs surprise
+
+function sceneEase(ctx, t) {
+  const a = seg(t, F3, F3 + .4) * (1 - seg(t, CB - .6, CB));
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha *= a;
+  tag(ctx, t, '因 素 三  ·  轻 松', F3 + .1, 142, 92, { color: P.blue });
+  ink(ctx, t, '亲密关系里，每句话都带着期待。', F3 + .4, 140, 170);
+  // Left: two timelines (story numbers).
+  tag(ctx, t, '等 待 回 复 的 时 间  ·  片 中 示 例', F3 + 1.4, 142, 300);
+  const L = { x0: 140, x1: 860 };
+  const rows = [['恋 人', 420, F3 + 1.8], ['普 通 朋 友', 700, F3 + 6.8]];
+  rows.forEach(([name, y, t0]) => {
+    const k = easeOut(seg(t, t0, t0 + .8));
+    tag(ctx, t, name, t0, L.x0, y - 40, { color: P.ink, size: 16 });
+    ctx.fillStyle = P.ink; ctx.fillRect(L.x0, y, (L.x1 - L.x0) * k, 1.5);
+    ctx.save(); ctx.globalAlpha *= k; roundRect(ctx, L.x0 - 6, y - 6, 34, 12, 6); ctx.fillStyle = P.pill; ctx.fill(); ctx.restore();
+  });
+  // Lovers: the clock runs, and the follow-ups pile up.
+  const run = seg(t, F3 + 2.4, F3 + 5.8), secs = Math.floor(easeIn(run) * (47 * 60 + 12));
+  if (run > 0) {
+    const mx = lerp(L.x0 + 60, L.x1, run);
+    ctx.fillStyle = P.blue; ctx.fillRect(L.x0 + 40, 419, mx - L.x0 - 40, 3);
+    bigNumber(ctx, `${String(Math.floor(secs / 60)).padStart(2, '0')}:${String(secs % 60).padStart(2, '0')}`, L.x1, 395, 64, P.blue, 1, 'right');
+    [['？', .3], ['怎么不回', .55], ['已读不回是吧', .8]].forEach(([s, p], i) => {
+      if (run < p) return;
+      const k = backOut(seg(t, F3 + 2.4 + p * 3.4, F3 + 2.7 + p * 3.4));
+      const x = lerp(L.x0 + 60, L.x1, p);
+      ctx.save(); ctx.globalAlpha *= clamp(k); ctx.font = `400 22px ${SANS}`;
+      const w = ctx.measureText(s).width + 26;
+      roundRect(ctx, x - w / 2, 440 + i * 6, w, 36, 6); ctx.fillStyle = P.pill; ctx.fill();
+      ctx.fillStyle = '#e8e8ea'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(s, x, 459 + i * 6);
+      ctx.restore();
+    });
+  }
+  // Friends: a long, calm line; two days later, “没事！”.
+  const fk = seg(t, F3 + 7.4, F3 + 8.6);
+  if (fk > 0) {
+    bigNumber(ctx, '2 天', L.x1, 675, 64, P.ink, fk, 'right');
+    const k = backOut(seg(t, F3 + 8.4, F3 + 8.8));
+    ctx.save(); ctx.globalAlpha *= clamp(k); ctx.font = `400 22px ${SANS}`;
+    roundRect(ctx, L.x1 - 96, 720, 96, 36, 6); ctx.fillStyle = P.blue; ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('没事！', L.x1 - 48, 739);
+    ctx.restore();
+  }
+  // Right: Liu et al. — reaching out is appreciated more than we think.
+  ctx.fillStyle = P.faint; ctx.fillRect(1000, 280, 1, 560 * seg(t, F3 + 1.0, F3 + 1.6));
+  tag(ctx, t, 'L I U   等   ·   2 0 2 2   ·   1 3 个 实 验 ， 近 6 0 0 0 人', F3 + 3.0, 1080, 300);
+  ink(ctx, t, '偶尔主动联系一个人，对方有多高兴？', F3 + 3.4, 1080, 360, { size: 28, stagger: .03 });
+  const base = 760, bw = 160;
+  [['你 以 为', .5, P.faint, F3 + 4.6], ['实 际 上', .82, P.blue, F3 + 5.2]].forEach(([s, v, c, t0], j) => {
+    const x = 1140 + j * 230, h = 300 * v * easeOut(seg(t, t0, t0 + .9));
+    ctx.fillStyle = c; ctx.fillRect(x, base - h, bw, h);
+    tag(ctx, t, s, t0, x + bw / 2, base + 32, { align: 'center', size: 15, color: P.ink });
+  });
+  const gk = seg(t, F3 + 6.2, F3 + 6.8);
+  if (gk > 0) {
+    const xg = 1140 + 230 + bw + 26, ya = base - 300 * .82, yb = base - 300 * .5;
+    ctx.save(); ctx.globalAlpha *= gk; ctx.strokeStyle = P.blue; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(xg, ya); ctx.lineTo(xg + 10, ya); ctx.lineTo(xg + 10, yb); ctx.lineTo(xg, yb); ctx.stroke(); ctx.restore();
+    tag(ctx, t, '被 低 估', F3 + 6.4, xg + 22, (ya + yb) / 2 + 6, { color: P.blue, size: 16 });
+  }
+  tag(ctx, t, '越 久 没 联 系 、 关 系 越 远 ， 低 估 得 越 多', F3 + 7.4, 1080, 830, { color: P.ink, size: 16 });
+  tag(ctx, t, '示 意 ： 只 表 示 方 向 和 差 距', F3 + 7.6, 1780, 1036, { size: 12, color: P.faint, spacing: 1, align: 'right' });
+  narr(ctx, [['普通朋友之间没有这本账，偶尔联系，每句话都是', P.ink], ['惊喜', P.blue], ['。', P.ink]], { t, t0: F3 + 10.4, x: 140, y: 980, size: 36, stagger: .04 });
+  ctx.restore();
+}
+
+// ---------------------------------------------------------------- together, and what to do
+
+function sceneTogether(ctx, t) {
+  const a = seg(t, CB, CB + .4) * (1 - seg(t, AD - .6, AD));
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha *= a;
+  formula(ctx, t, CB + .1, 220, 56);
+  const rows = [['天 天 联 系', 0, P.ink, 430], ['偶 尔 联 系', 1, P.blue, 650]];
+  rows.forEach(([name, j, col, y], ri) => {
+    const t0 = CB + 1.4 + ri * 1.4;
+    tag(ctx, t, name, t0, 300, y + 12, { color: col, size: 20, align: 'right' });
+    FACTORS.forEach((f, i) => {
+      const x = 360 + i * 300, k = easeOut(seg(t, t0 + i * .2, t0 + i * .2 + .7));
+      ctx.fillStyle = 'rgba(28,30,35,.08)'; ctx.fillRect(x, y, 240, 22);
+      ctx.fillStyle = col; ctx.fillRect(x, y, 240 * LEVELS[i][j] * k, 22);
+      if (ri === 0) tag(ctx, t, f, CB + 1.2, x + 120, 380, { align: 'center', size: 15, color: P.ink });
+      if (i < 2) tag(ctx, t, '×', t0 + .6, x + 270, y + 18, { align: 'center', size: 20, color: P.dim });
+    });
+    // The product: a circle whose area is the result.
+    const prod = LEVELS.reduce((p, l) => p * l[j], 1), k = easeOut(seg(t, t0 + 1.0, t0 + 1.8));
+    tag(ctx, t, '=', t0 + 1.0, 1290, y + 18, { align: 'center', size: 22, color: P.dim });
+    ctx.fillStyle = col; ctx.beginPath(); ctx.arc(1420, y + 11, Math.max(3, Math.sqrt(prod) * 120) * k, 0, 7); ctx.fill();
+  });
+  tag(ctx, t, '话 题', CB + 1.2, 1420, 380, { align: 'center', size: 15, color: P.ink });
+  tag(ctx, t, '示 意', CB + 1.2, 1780, 1036, { size: 12, color: P.faint, align: 'right' });
+  ink(ctx, t, '话少，不是因为不爱了，', CB + 4.8, 140, 900, { size: 46 });
+  narr(ctx, [['是因为', P.ink], ['没有留白', P.blue], ['。', P.ink]], { t, t0: CB + 6.2, x: 140, y: 980, size: 46, stagger: .07 });
+  ctx.restore();
+}
+
+function sceneAdvice(ctx, t) {
+  const a = seg(t, AD, AD + .4) * (1 - seg(t, EN - 1.9, EN - 1.5));
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha *= a;
+  tag(ctx, t, '那 么 ，', AD + .2, 142, 200, { size: 18, color: P.ink });
+  const items = [
+    [['接住每一句“废话”', P.blue], ['——那是关系的脉搏。', P.ink]],
+    [['偶尔问一个真问题', P.blue], ['，而不是“吃了吗”。', P.ink]],
+    [['给彼此留一点白', P.blue], ['，让新鲜事有时间长出来。', P.ink]],
+  ];
+  items.forEach((parts, i) => {
+    const y = 360 + i * 200, t0 = AD + .8 + i * 2.6;
+    bigNumber(ctx, String(i + 1), 140, y + 8, 64, P.faint, seg(t, t0 - .2, t0 + .2));
+    narr(ctx, parts, { t, t0, x: 220, y, size: 46, stagger: .05 });
+    // A tiny echo of the chart behind each point, on the right.
+    const k = seg(t, t0 + .8, t0 + 1.6), x = 1380;
+    ctx.save(); ctx.globalAlpha *= k;
+    if (i === 0) { for (let j = 0; j < 7; j++) { roundRect(ctx, x + j * 46, y - 22, 30, 11, 5.5); ctx.fillStyle = P.pill; ctx.fill(); if (j !== 3) { ctx.fillStyle = P.blue; ctx.beginPath(); ctx.arc(x + j * 46 + 37, y - 16, 4, 0, 7); ctx.fill(); } } }
+    if (i === 1) { ctx.strokeStyle = P.blue; ctx.lineWidth = 3; ctx.beginPath(); for (let d = 0; d <= 1; d += .02) { const px = x + d * 320, py = y - 10 - 60 * (1 - Math.exp(-d * 2)) * k; d ? ctx.lineTo(px, py) : ctx.moveTo(px, py); } ctx.stroke(); }
+    if (i === 2) {
+      ctx.strokeStyle = P.ink; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x, y);
+      for (let d = 0; d <= 8; d += .05) ctx.lineTo(x + d * 18, y - (d % 1) * 12); ctx.stroke();
+      ctx.strokeStyle = P.blue; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x + 150, y); ctx.quadraticCurveTo(x + 260, y - 10, x + 320, y - 70 * k); ctx.stroke();
+    }
+    ctx.restore();
+  });
+  ctx.restore();
+}
+
+// ---------------------------------------------------------------- the ending (black again)
+
 const ASK = (() => {
-  const m = [[2.0, 'me', '最近在想什么？'],
-    [9.6, 'them', '其实，我最近想重新开始弹琴。小时候学了六年，后来觉得没用就放下了。前几天路过琴行，在门口站了好久。'],
-    [11.4, 'me', '你弹给我听'], [12.3, 'them', '好'],
-    [13.1, 'them', '那我明天去琴行问问'], [13.6, 'me', '我陪你去'], [14.1, 'them', '你还记得我说过小时候弹的那首曲子吗'],
-    [14.6, 'me', '你没跟我说过'], [15.0, 'them', '那我讲给你听'], [15.4, 'them', '是外婆教我的第一首，那年我七岁'],
-    [15.8, 'me', '嗯，你说，我在听'], [16.2, 'them', '她的手很暖，总是先弹一遍给我听'], [16.6, 'them', '后来她走了，我就不太想碰琴了'],
-    [17.1, 'me', '那这次，我坐在旁边听'], [17.6, 'them', '好']];
-  return liveItems({ date: '2026年10月19日  22:30' }, m.map(([at, w, x]) => [E2 + at, w, x]));
+  const m = [[1.0, 'me', '最近在想什么？'],
+    [6.6, 'them', '其实，我最近想重新开始弹琴。小时候学了六年，后来觉得没用就放下了。前几天路过琴行，在门口站了好久。'],
+    [8.2, 'me', '你弹给我听'], [8.9, 'them', '好']];
+  return liveItems({ date: '2026年10月19日  22:30' }, m.map(([at, w, x]) => [EN + at, w, x]));
 })();
-const ASK_TYPING = [[3.0, 4.6], [5.4, 6.4], [7.2, 9.6], [12.0, 12.3], [12.8, 13.1], [13.8, 14.1]].map(([a, b]) => [E2 + a, E2 + b]);
+const ASK_TYPING = [[1.8, 3.0], [3.6, 4.4], [5.0, 6.6], [8.5, 8.9]].map(([a, b]) => [EN + a, EN + b]);
 
 function sceneEnding(ctx, t) {
-  if (t < A5 - .3) return;
-  const a = seg(t, A5 - .3, A5 + .4);
-  ctx.save(); ctx.globalAlpha *= a;
-  // 5-1: “嗯，灯给你留着”.
-  if (t < E2 + .3) {
-    const k = 1 - seg(t, E2 - .4, E2 + .3);
+  if (t < EN - .1) return;
+  const k = 1 - seg(t, ED - .5, ED);
+  if (k > 0) {
     ctx.save(); ctx.globalAlpha *= k;
     backdrop(ctx, { t, cx: W * .3 });
     ctx.fillStyle = COL.line; ctx.fillRect(940, 140, 1, 800);
-    dash(ctx, { a: 1, date: '2026 . 10 . 16', big: '01:12', rows: ['在 一 起 第  1458  天', '加 班 到 深 夜'] });
-    panel(ctx, { t, cx: 1400, cy: 560, name: '小 鹿', items: NIGHT, typing: [[E1 + 2.2, E1 + 3.2]] });
-    NL(ctx, t, '可是，话少，', E1 + 4.2, E1 + 7.0, 700);
-    NL(ctx, t, '就是不爱了吗？', E1 + 5.0, E1 + 7.0, 762);
-    NL(ctx, t, '有些“嗯”，', E1 + 7.3, E2 - .4, 700, { glow: COL.warm });
-    NL(ctx, t, '是不用解释的安心。', E1 + 8.0, E2 - .4, 762);
+    const m = MIN(22, 30) + Math.floor(6 * easeIn(seg(t, EN + 1.0, EN + 6.6)));
+    dash(ctx, { a: seg(t, EN, EN + .5), date: '2026 . 10 . 19', big: hhmm(m), rows: ['在 一 起 第  1461  天', `今 日 消 息  ${ASK.filter(x => x.at && x.at <= t).length}`] });
+    panel(ctx, { t, cx: 1400, cy: 560, name: '小 鹿', items: ASK, typing: ASK_TYPING, a: seg(t, EN, EN + .5) });
+    NL(ctx, t, '第一千四百六十一天，', EN + .6, EN + 5.4, 700);
+    NL(ctx, t, '我问了一个真正的问题。', EN + 1.5, EN + 5.4, 762);
+    NL(ctx, t, '原来她一直有话想说，', EN + 7.2, ED - .6, 700);
+    NL(ctx, t, '只是我很久没有问了。', EN + 8.2, ED - .6, 762, { color: COL.warm });
     ctx.restore();
   }
-  // 5-2: a real question.
-  if (t >= E2 - .3 && t < E3 + .6) {
-    const k = seg(t, E2 - .3, E2 + .4) * (1 - seg(t, E3 - .4, E3 + .6));
-    ctx.save(); ctx.globalAlpha *= k;
-    backdrop(ctx, { t, cx: W * .3 });
-    ctx.fillStyle = COL.line; ctx.fillRect(940, 140, 1, 800);
-    const m = t < E2 + 9.6 ? MIN(22, 30) + Math.floor(6 * easeIn(seg(t, E2 + 2.0, E2 + 9.6))) : lerp(MIN(22, 36), MIN(23, 40), seg(t, E2 + 9.6, E2 + 20));
-    const today = ASK.filter(x => x.at && x.at <= t).length;
-    dash(ctx, { a: 1, date: '2026 . 10 . 19', big: hhmm(m), rows: ['在 一 起 第  1461  天', `今 日 消 息  ${today}`] });
-    panel(ctx, { t, cx: 1400, cy: 560, name: '小 鹿', items: ASK, typing: ASK_TYPING });
-    NL(ctx, t, '第一千四百六十一天，', E2 + .5, E2 + 5.4, 700);
-    NL(ctx, t, '我问了一个真正的问题。', E2 + 1.4, E2 + 5.4, 762);
-    NL(ctx, t, '她想了很久。', E2 + 5.8, E2 + 9.4, 700, { color: COL.dim });
-    NL(ctx, t, '原来她一直有话想说，', E2 + 11.4, E3 - .6, 700);
-    NL(ctx, t, '只是我很久没有问了。', E2 + 12.6, E3 - .6, 762, { color: COL.warm });
-    ctx.restore();
+  if (t >= ED - .3) {
+    ctx.save(); ctx.globalAlpha *= seg(t, ED - .3, ED + .4); backdrop(ctx, { t, lift: .6 }); ctx.restore();
+    narr(ctx, '留白', { t, t0: ED + .3, x: W / 2, y: 560, size: 180, align: 'center', stagger: .35, glow: COL.warm });
+    narr(ctx, '最亲的人，也需要一点“好久不见”。', { t, t0: ED + 1.6, x: W / 2, y: 680, size: 32, weight: 400, align: 'center', color: COL.dim, stagger: .04 });
   }
-  // 5-3: back in the sea; the dim star lights up, then the others.
-  if (t >= E3 - .3 && t < E4 + .4) {
-    const k = seg(t, E3 - .3, E3 + .6) * (1 - seg(t, E4 - .4, E4 + .4));
-    ctx.save(); ctx.globalAlpha *= k;
-    backdrop(ctx, { t, stars: .8, lift: .4 });
-    const lit = { 4: E3 + 1.2, 0: E3 + 3.0, 1: E3 + 3.4, 2: E3 + 3.8, 3: E3 + 4.2, 5: E3 + 4.6,
-      text: { 4: '想重新开始弹琴', 0: '那首曲子是外婆教的', 1: '你弹给我听', 2: '我陪你去', 3: '那年我七岁', 5: '我坐在旁边听' } };
-    unsaidStars(ctx, t, 1, lit);
-    ctx.restore();
-    NC(ctx, t, '留一点白，', E3 + 4.6, E4 - .5, 520, { size: 50, halo: true });
-    NC(ctx, t, '想说的话，才有地方长出来。', E3 + 5.4, E4 - .5, 600, { size: 50, halo: true });
-  }
-  // 5-4: end card.
-  if (t >= E4 - .3) {
-    ctx.save(); ctx.globalAlpha *= seg(t, E4 - .3, E4 + .4); backdrop(ctx, { t, lift: .6 }); ctx.restore();
-    narr(ctx, '留白', { t, t0: E4 + .3, x: W / 2, y: 560, size: 180, align: 'center', stagger: .35, glow: COL.warm });
-    narr(ctx, '最亲的人，也需要一点“好久不见”。', { t, t0: E4 + 1.6, x: W / 2, y: 680, size: 32, weight: 400, align: 'center', color: COL.dim, stagger: .04 });
-  }
-  ctx.restore();
 }
 
 // ================================================================ frame
 
+const WHITE_FROM = S1 + .7, WHITE_TO = EN - 1.0;   // when the frame is mostly white (for the vignette)
+
 function drawFrame(ctx, t) {
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1;
-  ctx.fillStyle = COL.bg0; ctx.fillRect(0, 0, W, H);
-  if (t < A2 + .1) sceneLovers(ctx, t);
-  sceneFriend(ctx, t);
-  sceneWall(ctx, t);
-  sceneTitle(ctx, t);
+  const white = t >= S2 && t < EN - 1.5;
+  if (white) whiteBackdrop(ctx); else { ctx.fillStyle = COL.bg0; ctx.fillRect(0, 0, W, H); }
+  if (t < Z) {
+    if (t < A2 + .1) sceneLovers(ctx, t);
+    sceneFriend(ctx, t);
+    sceneWall(ctx, t);
+    sceneTitle(ctx, t);
+  }
   sceneSea(ctx, t);
-  sceneReasons(ctx, t);
+  if (t >= Z - 1.3 && t < S2) {
+    if (t >= Z - .3) { ctx.save(); ctx.globalAlpha = seg(t, Z - .3, Z + .3); backdrop(ctx, { t, lift: .5 }); ctx.restore(); }
+    sceneBlocks(ctx, t);
+  }
+  if (t >= S1 && t < S2) flip(ctx, t, S1, S2, '#15161a', P.bg);
+  if (white) {
+    sceneGottman(ctx, t); sceneFormula(ctx, t); sceneArea(ctx, t); sceneBars(ctx, t);
+    sceneCuriosity(ctx, t); sceneEase(ctx, t); sceneTogether(ctx, t); sceneAdvice(ctx, t);
+    factorHud(ctx, t);
+  }
+  if (t >= EN - 1.5 && t < EN) flip(ctx, t, EN - 1.5, EN - .1, P.bg, '#060709', true);
   sceneEnding(ctx, t);
   const black = 1 - seg(t, 0, .6) + seg(t, DUR - 1.2, DUR);
   if (black > 0) { ctx.fillStyle = `rgba(0,0,0,${clamp(black)})`; ctx.fillRect(0, 0, W, H); }
-  finish(ctx, t);
+  finish(ctx, t, t > WHITE_FROM && t < WHITE_TO ? { vignette: .1 } : {});
 }
 
 // ================================================================ sound
@@ -648,29 +939,25 @@ const CUES = (() => {
   send(DAY1); send(LATE); send(FRIEND_MSGS);
   c.push({ t: WL + 1.95, kind: 'boom' }, { t: WL + 2.0, kind: 'shimmer' });
   c.push({ t: TT + .2, kind: 'chord', notes: [146.8, 220, 293.7, 370] });
-  c.push({ t: SE - .3, kind: 'swell', dur: 6.0 }, { t: SE + 7.6, kind: 'note', f: 220 }, { t: SE + 11.6, kind: 'note', f: 329.6 });
-  for (let n = 0; n < 4; n++) c.push({ t: chapterAt(n) + .2, kind: 'whoosh' });
-  for (let i = 0; i < 7; i++) c.push({ t: chapterAt(0) + 3.4 + i * .9 + .55, kind: 'drip', pitch: i / 7 });
-  [[3.4], [5.0], [5.8], [6.6], [7.3], [7.9], [8.5], [9.4], [9.9], [10.3], [10.8]].forEach(([x]) => c.push({ t: chapterAt(1) + x, kind: 'send', gain: .8 }));
-  send([[E1 + 1.6], [E1 + 3.2]]);
+  c.push({ t: SE - .3, kind: 'swell', dur: 6.0 }, { t: SE + 7.6, kind: 'note', f: 220 });
+  c.push({ t: S1, kind: 'whoosh' }, { t: S2 + .3, kind: 'note', f: 523.3 });
+  for (const x of [S3 + .3, S4, S5, F2, F3, CB, AD]) c.push({ t: x, kind: 'whoosh' });
+  c.push({ t: S5 + 4.6, kind: 'note', f: 659.3 }, { t: CB + 6.2, kind: 'note', f: 523.3 });
+  c.push({ t: EN - 1.5, kind: 'whoosh' });
   send(ASK.filter(x => x.at).map(x => [x.at]));
-  c.push({ t: E3 + 1.2, kind: 'note', f: 523.3 }, { t: E3 + 3.0, kind: 'shimmer' });
-  c.push({ t: E4 + .3, kind: 'chord', notes: [130.8, 196, 261.6, 329.6] });
+  c.push({ t: ED + .3, kind: 'chord', notes: [130.8, 196, 261.6, 329.6] });
   return c.sort((a, b) => a.t - b.t);
 })();
 
-// Soft piano chords under the whole film: warm at the start and the end, colder in the middle.
 const PAD = [
   [0.3, [110, 164.8, 261.6, 329.6]], [4.3, [98, 146.8, 246.9, 293.7]],
   [T2 + .5, [87.3, 130.8, 220, 261.6]], [T2 + 4.5, [82.4, 123.5, 196, 246.9]],
   [T3 + .3, [87.3, 130.8, 220]], [T3 + 5.3, [82.4, 123.5, 196]],
   [A2 + .4, [98, 146.8, 220]], [B1 + .3, [110, 164.8, 261.6, 329.6]], [B1 + 4.3, [123.5, 185, 293.7]], [B1 + 8.3, [110, 164.8, 277.2]],
   [B2 + .4, [98, 146.8, 246.9]],
-  [SE + 6.6, [73.4, 110, 174.6]], [SE + 11.0, [82.4, 123.5, 196]],
-  ...[0, 1, 2, 3].flatMap(n => [[chapterAt(n) + .3, [98, 146.8, 246.9]], [chapterAt(n) + 6.3, [87.3, 130.8, 220]], [chapterAt(n) + 12.4, [110, 164.8, 261.6]]]),
-  [E1 + .3, [87.3, 130.8, 220]], [E1 + 6.3, [98, 146.8, 246.9, 293.7]],
-  [E2 + .3, [98, 146.8, 220]], [E2 + 9.6, [110, 164.8, 261.6, 329.6]], [E2 + 13.6, [123.5, 185, 293.7, 370]], [E2 + 17.6, [110, 164.8, 277.2, 329.6]],
-  [E3 + .3, [130.8, 196, 261.6, 329.6]], [E3 + 4.3, [110, 164.8, 261.6, 329.6]],
+  [SE + 6.6, [73.4, 110, 174.6]], [Z + .3, [87.3, 130.8, 220]], [Z + 4.3, [82.4, 123.5, 196]],
+  ...Array.from({ length: Math.ceil((EN - S2) / 4) }, (_, i) => [S2 + .2 + i * 4, [[130.8, 196, 261.6, 329.6], [110, 164.8, 261.6, 329.6], [116.5, 174.6, 293.7], [98, 146.8, 246.9, 293.7]][i % 4]]),
+  [EN + .3, [98, 146.8, 220]], [EN + 6.6, [110, 164.8, 261.6, 329.6]],
 ];
 
 const CUT = { dur: DUR, cues: CUES, pad: PAD, drawFrame };
