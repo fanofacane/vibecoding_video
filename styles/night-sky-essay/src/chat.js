@@ -4,6 +4,7 @@
 // A chat is an array of items:
 //   { who: 'me'|'them', text }      bubble
 //   { date: '2026年4月18日 23:14' }  tiny centred time stamp
+//   { who, typing: [t0, t1] }       “typing…” dots that appear at t0 and go away at t1 (no message has to follow)
 // Any item may carry `at` (seconds): it fades in at that time and pushes the column up.
 
 const BUB = { font: 22, line: 31, padX: 17, padY: 11, r: 7, maxW: 330, gap: 12, turn: 26, date: 54 };
@@ -15,6 +16,7 @@ function chatLayout(ctx, items) {
   let prev = null;
   const out = items.map(it => {
     if (it.date) { prev = null; return { ...it, h: BUB.date }; }
+    if (it.typing) return { ...it, bw: 84, bh: 44, space: BUB.gap, h: 44 + BUB.gap };
     const lines = wrap(ctx, it.text, BUB.maxW);
     const bw = Math.max(...lines.map(l => ctx.measureText(l).width)) + BUB.padX * 2;
     const bh = lines.length * BUB.line + BUB.padY * 2 - (BUB.line - BUB.font);
@@ -44,15 +46,17 @@ function bubble(ctx, it, x, y, a = 1) {
 }
 
 // o: { t, x (column left), w (column width), top, bot (visible band), items, scroll (0 = newest at the bottom,
-//      1 = oldest at the top), fade (px of soft edge), a (alpha), dx (extra x shift) }
+//      1 = oldest at the top), fade (px of soft edge), a (alpha), dx (extra x shift), fromTop (start at the top) }
 // Returns the y of the bottom of the content.
 function chatColumn(ctx, o) {
   const t = o.t, items = chatLayout(ctx, o.items), fade = o.fade ?? 120;
-  const grow = it => it.at === undefined ? 1 : easeOut(seg(t, it.at, it.at + .35));
+  const grow = it => it.typing ? easeOut(seg(t, it.typing[0], it.typing[0] + .25)) * (1 - ease(seg(t, it.typing[1] - .2, it.typing[1])))
+    : it.at === undefined ? 1 : easeOut(seg(t, it.at, it.at + .35));
   let total = 0;
   for (const it of items) total += it.h * grow(it);
   const view = o.bot - o.top, maxOff = Math.max(0, total - view + 30);
   let y = o.bot - 30 - total + (o.scroll || 0) * maxOff;
+  if (o.fromTop) y = Math.min(y, o.top + 20);   // a live chat starts at the top and scrolls once it is full
   ctx.save(); ctx.globalAlpha *= o.a ?? 1;
   for (const it of items) {
     const k = grow(it); if (k <= 0) continue;
@@ -67,10 +71,26 @@ function chatColumn(ctx, o) {
       continue;
     }
     const x = (it.who === 'me' ? o.x + o.w - it.bw : o.x) + (o.dx || 0);
+    if (it.typing) { typingDots(ctx, it, x, top, t, edge * k); continue; }
     bubble(ctx, it, x, top + (1 - k) * 14, edge * k);
   }
   ctx.restore();
   return y;
+}
+
+// Three bouncing dots in the speaker's bubble colour.
+function typingDots(ctx, it, x, y, t, a) {
+  if (a <= 0) return;
+  const me = it.who === 'me';
+  ctx.save(); ctx.globalAlpha *= a;
+  roundRect(ctx, x, y, it.bw, it.bh, BUB.r);
+  ctx.fillStyle = me ? rgba(COL.me, .85) : COL.them; ctx.fill();
+  for (let i = 0; i < 3; i++) {
+    const b = Math.max(0, Math.sin(t * 7 - i * .8));
+    ctx.fillStyle = me ? rgba(COL.meText, .35 + .5 * b) : rgba(COL.themText, .3 + .55 * b);
+    ctx.beginPath(); ctx.arc(x + 24 + i * 18, y + it.bh / 2 - b * 3, 4.5, 0, 7); ctx.fill();
+  }
+  ctx.restore();
 }
 
 // A bubble on its own (for messages that spill out of the column). (x, y) is its centre.

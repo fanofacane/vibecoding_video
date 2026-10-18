@@ -22,7 +22,21 @@ export function synth(cues, pad, dur) {
   cues.forEach((c, ci) => {
     const r = hash(ci);
     switch (c.kind) {
-      case 'tick': add(c.t, .03, x => sin(1800 + (c.pitch ?? .5) * 900, x) * Math.exp(-x * 220) * .05, (r - .5) * .6); break;
+      case 'tick': add(c.t, .03, x => sin(1800 + (c.pitch ?? .5) * 900, x) * Math.exp(-x * 220) * (c.quiet ? .025 : .05), (r - .5) * .6); break;
+      case 'rain': {   // a swelling wash of filtered noise that stops dead at the end
+        let y = 0;
+        add(c.t, c.dur, x => { y += (hash(ci * 977 + x * SR) - .5 - y) * .35; return y * (x / c.dur) ** 2 * .55 * Math.min(1, (c.dur - x) * 200); }, 0);
+        break;
+      }
+      case 'swell': {  // rising, slightly detuned string-like chord
+        const fs = [110, 164.8, 220, 277.2, 329.6, 440];
+        add(c.t, c.dur, x => {
+          const env = (x / c.dur) ** 1.6 * Math.min(1, (c.dur - x) * 30);
+          let v = 0; fs.forEach((f, k) => { v += sin(f * (1 + .004 * Math.sin(x * 3 + k)), x) + .3 * sin(f * 2.003, x); });
+          return v * env * .03;
+        });
+        break;
+      }
       case 'ding': {   // message notification: two bright tones
         const f = 1318.5 * (1 + (c.pitch ?? 0) * .12);
         add(c.t, .8, x => (piano(f, x, 5) + .6 * piano(f * 1.5, Math.max(0, x - .07), 6) * (x > .07)) * .07, (r - .5) * .9);
