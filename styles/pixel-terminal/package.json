@@ -1,0 +1,10 @@
+{
+  "name": "pixel-terminal",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pixel terminal dialogue videos: two pixel Clawds chatting in a terminal window.",
+  "type": "module",
+  "dependencies": {
+    "puppeteer-core": "^25.11.0"
+  }
+}
