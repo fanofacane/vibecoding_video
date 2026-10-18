@@ -6,6 +6,9 @@
 //   node render.mjs --encode [--out=out/pdoom.mp4]                               frames + song → MP4
 //   node render.mjs --loop=recursion [--out=out/loop_recursion]                 one cycle of a standalone loop (PNGs)
 //   (--loop also works with --sheet, where the times are loop time)
+//   --page=<file>.html renders another page of this style instead of studio.html
+//   --no-sandbox passes Chrome's --no-sandbox (needed when running as root, e.g. in Linux containers)
+//   --angle=d3d11|gl|vulkan|swiftshader overrides the WebGL backend (default: d3d11 on Windows, Chrome's choice elsewhere)
 import puppeteer from 'puppeteer-core';
 import { spawn } from 'node:child_process';
 import { mkdirSync, writeFileSync, existsSync, statSync, renameSync, readdirSync } from 'node:fs';
@@ -19,6 +22,8 @@ const AUDIO = stylePath('assets/pdoom.mp3');
 
 const args = Object.fromEntries(process.argv.slice(2).map(a => { const [k, v] = a.replace(/^--/, '').split('='); return [k, v ?? true]; }));
 const CHROME = args.chrome || 'C:/Program Files/Google/Chrome/Application/chrome.exe';
+// WebGL backend: Direct3D on Windows; elsewhere let Chrome choose (falls back to software SwiftShader without a GPU).
+const ANGLE = args.angle || (process.platform === 'win32' ? 'd3d11' : null);
 const DUR = 156.6, fps = +(args.fps || 24);
 const FRAMES_DIR = stylePath('out/frames');
 
@@ -36,13 +41,14 @@ if (args.encode) {
 
 const browser = await puppeteer.launch({
   executablePath: CHROME, headless: true, protocolTimeout: 0,
-  args: ['--allow-file-access-from-files', '--ignore-gpu-blocklist', '--use-angle=d3d11', '--enable-gpu-rasterization', '--window-size=1920,1080', '--disable-renderer-backgrounding', '--disable-background-timer-throttling']
+  args: ['--allow-file-access-from-files', '--ignore-gpu-blocklist', ...(ANGLE ? [`--use-angle=${ANGLE}`] : ['--enable-unsafe-swiftshader']), '--enable-gpu-rasterization', '--window-size=1920,1080', '--disable-renderer-backgrounding', '--disable-background-timer-throttling', ...(args['no-sandbox'] ? ['--no-sandbox'] : []),
+    ...(process.env.HTTPS_PROXY ? [`--proxy-server=${process.env.HTTPS_PROXY}`] : [])]  // fonts load through the same proxy as other tools
 });
 async function openPage(tag = '') {
   const page = await browser.newPage();
   page.on('console', m => { if (['error', 'warn'].includes(m.type())) console.log(`[page${tag}]`, m.text()); });
   page.on('pageerror', e => console.log(`[page error${tag}]`, e.message));
-  await page.goto(pathToFileURL(stylePath('studio.html')).href + '?render', { waitUntil: 'networkidle0' });
+  await page.goto(pathToFileURL(stylePath(args.page || 'studio.html')).href + '?render', { waitUntil: 'networkidle0' });
   await page.waitForFunction('window.ready === true', { timeout: 60000 });
   if (args.loop) await page.evaluate(name => { window.LOOP = LOOPS[name]; }, args.loop);
   return page;

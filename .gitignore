@@ -1,3 +1,7 @@
 node_modules/
 out/
 **/assets/source.mp4
+
+# music extracted from user-supplied video; not redistributed
+styles/sitcom-flat/works/*/assets/music.*
+__pycache__/

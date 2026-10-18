@@ -62,3 +62,5 @@ node render.mjs --encode --out=out/pdoom.mp4
 从仓库根目录运行时使用 `node styles/watercolor-ink/render.mjs ...`。输入资源和相对输出路径始终以本风格目录为基准，不受终端当前目录影响；绝对 `--out` 路径也可使用。不同风格的 `out/` 相互隔离，且不提交 Git。
 
 默认浏览器为 `C:/Program Files/Google/Chrome/Application/chrome.exe`。其他安装位置请加上 `--chrome=<路径>`；路径含空格时将整个参数用引号括起来。
+
+其他渲染参数：`--page=<页面>` 渲染本目录下的其他页面；`--no-sandbox` 用于以 root 运行的 Linux 容器；`--angle=<后端>` 覆盖 WebGL 后端（Windows 默认 `d3d11`，其他系统由 Chrome 自选，无显卡时使用软件渲染）。设置了 `HTTPS_PROXY` 时，Chrome 会通过该代理加载字体。
