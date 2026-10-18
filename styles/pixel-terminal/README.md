@@ -22,6 +22,7 @@
 | [studio.html](studio.html) | 浏览器预览（播放 / 拖动），也是离线渲染页面 |
 | [render.mjs](render.mjs) | 拼图、静帧、整片渲染入口 |
 | [audio.mjs](audio.mjs) | 根据剧本的声音提示合成 WAV |
+| [cover.html](cover.html) | 横屏和竖屏封面 |
 
 ## 改剧本
 
@@ -51,6 +52,9 @@ node render.mjs --stills=31.5,76 --out=out/stills
 
 # 整片：逐帧渲染 → 合成声音 → MP4
 node render.mjs --video --fps=30 --workers=4 --out=out/no-yesterday.mp4
+
+# 封面：横屏 1920×1080 和竖屏 1080×1920（cover.html）
+node render.mjs --cover --out=out/cover
 ```
 
 也可直接用浏览器打开 `studio.html`，点 ▶ 播放或拖动时间条预览（没有声音）。

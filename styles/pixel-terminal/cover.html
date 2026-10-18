@@ -1,0 +1,164 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Pixel terminal covers</title>
+<style>
+  html, body { margin: 0; background: #0f0c0a; }
+  body { display: flex; gap: 16px; padding: 16px; align-items: flex-start; flex-wrap: wrap; }
+  canvas { width: min(100%, 960px); height: auto; }
+  #v { width: min(100%, 405px); }
+</style>
+</head>
+<body>
+<canvas id="h" width="1920" height="1080"></canvas>
+<canvas id="v" width="1080" height="1920"></canvas>
+<script src="src/util.js"></script>
+<script src="src/clawd.js"></script>
+<script src="src/script.js"></script>
+<script src="src/scene.js"></script>
+<script>
+// Covers for 《没有昨天》: the same pixel-terminal look as the film, laid out for a thumbnail.
+// drawCover(ctx, w, h) picks the landscape or portrait layout from the canvas shape.
+
+function backdrop(ctx, w, h) {
+  const g = ctx.createRadialGradient(w * .62, h * .62, 50, w * .5, h * .5, Math.max(w, h) * .8);
+  g.addColorStop(0, '#3a2c22'); g.addColorStop(.55, '#211a16'); g.addColorStop(1, '#120e0b');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+  // Faint terminal window behind everything.
+  const m = 36;
+  roundRect(ctx, m, m, w - 2 * m, h - 2 * m, 18);
+  ctx.strokeStyle = rgba('#8d8072', .28); ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = rgba('#000000', .25); ctx.fillRect(m + 2, m + 2, w - 2 * m - 4, 42);
+  ['#e0605a', '#e3b04b', '#5fbf6a'].forEach((c, i) => { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(m + 28 + i * 24, m + 22, 7, 0, 7); ctx.fill(); });
+  ctx.font = `20px ${FONT_CJK}`; ctx.fillStyle = COL.dim; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('claude — 克克 × 劳劳 · 会话 #1', w / 2, m + 23);
+  // Drifting pixel dust in the two character colours.
+  for (let i = 0; i < 70; i++) {
+    const s = 6 + Math.floor(hash(i + 9) * 3) * 4;
+    ctx.fillStyle = rgba(i % 2 ? COL.ll : COL.kk, .1 + hash(i + 3) * .25);
+    ctx.fillRect(Math.round(hash(i) * w), Math.round(90 + hash(i + 1) * (h - 160)), s, s);
+  }
+}
+
+function finish(ctx, w, h) {
+  ctx.fillStyle = 'rgba(0,0,0,.07)'; for (let y = 0; y < h; y += 3) ctx.fillRect(0, y, w, 1);
+  const g = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * .4, w / 2, h / 2, Math.max(w, h) * .75);
+  g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.5)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+}
+
+// Big title with a hard pixel shadow; "昨天" in amber.
+function title(ctx, x, y, size, align) {
+  ctx.save();
+  ctx.font = `900 ${size}px ${FONT_CJK}`; ctx.textBaseline = 'alphabetic';
+  const a = '没有', b = '昨天', wa = ctx.measureText(a).width, wb = ctx.measureText(b).width;
+  let x0 = align === 'center' ? x - (wa + wb) / 2 : x;
+  ctx.textAlign = 'left';
+  const sh = Math.round(size * .055);
+  ctx.fillStyle = '#0b0807'; ctx.fillText(a, x0 + sh, y + sh); ctx.fillText(b, x0 + wa + sh, y + sh);
+  ctx.fillStyle = COL.text; ctx.fillText(a, x0, y);
+  ctx.fillStyle = COL.amber; ctx.fillText(b, x0 + wa, y);
+  ctx.restore();
+}
+
+function tag(ctx, x, y, align) {
+  ctx.save();
+  ctx.font = `bold 30px ${FONT_CJK}`;
+  const txt = 'AI 小剧场 · 两个 Claude 的对话', w = ctx.measureText(txt).width + 44, x0 = align === 'center' ? x - w / 2 : x;
+  roundRect(ctx, x0, y - 26, w, 52, 26); ctx.fillStyle = rgba(COL.amber, .14); ctx.fill();
+  ctx.strokeStyle = rgba(COL.amber, .8); ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = COL.amber; ctx.textBaseline = 'middle'; ctx.textAlign = 'left'; ctx.fillText(txt, x0 + 22, y + 1);
+  ctx.restore();
+}
+
+// "上下文 ▮▮▮… 99%" in alarm red.
+function ctxBar(ctx, x, y, align) {
+  ctx.save();
+  const n = 26, bw = 12, gap = 4, label = 74, pct = 92, total = label + n * (bw + gap) + pct;
+  const x0 = align === 'center' ? x - total / 2 : x;
+  ctx.font = `28px ${FONT_CJK}`; ctx.fillStyle = COL.dim; ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+  ctx.fillText('上下文', x0, y);
+  for (let i = 0; i < n; i++) { ctx.fillStyle = i < n - 1 ? COL.red : rgba(COL.red, .35); ctx.fillRect(x0 + label + 18 + i * (bw + gap), y - 14, bw, 28); }
+  ctx.font = `bold 32px ${FONT_MONO}`; ctx.fillStyle = COL.red; ctx.fillText('99%', x0 + label + 30 + n * (bw + gap), y + 1);
+  ctx.restore();
+}
+
+// A chat bubble in a speaker's colour, with a typing cursor.
+function bubble(ctx, x, y, text, who, size, tailX) {
+  ctx.save();
+  ctx.font = `${size}px ${FONT_CJK}`;
+  const tw = ctx.measureText(text).width, padX = size * .7, w = tw + padX * 2 + size * .5, h = size * 2;
+  const col = WHO[who].color;
+  ctx.fillStyle = 'rgba(0,0,0,.4)'; roundRect(ctx, x + 6, y + 8, w, h, 16); ctx.fill();
+  ctx.fillStyle = '#231c18'; roundRect(ctx, x, y, w, h, 16); ctx.fill();
+  ctx.strokeStyle = col; ctx.lineWidth = 3; ctx.stroke();
+  // Tail pointing down at the speaker.
+  ctx.beginPath(); ctx.moveTo(tailX - 16, y + h - 1); ctx.lineTo(tailX, y + h + 26); ctx.lineTo(tailX + 16, y + h - 1); ctx.closePath();
+  ctx.fillStyle = '#231c18'; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(tailX - 16, y + h); ctx.lineTo(tailX, y + h + 26); ctx.lineTo(tailX + 16, y + h); ctx.stroke();
+  ctx.fillStyle = COL.text; ctx.textBaseline = 'middle'; ctx.textAlign = 'left'; ctx.fillText(text, x + padX, y + h / 2 + 2);
+  ctx.fillStyle = col; ctx.fillRect(x + padX + tw + 8, y + h / 2 - size * .48, size * .38, size * .96);
+  ctx.restore();
+}
+
+// A tilted cream memory.md card.
+function memoCard(ctx, cx, cy, rot, scale) {
+  ctx.save();
+  ctx.translate(cx, cy); ctx.rotate(rot); ctx.scale(scale, scale);
+  const w = 660, h = 210, x = -w / 2, y = -h / 2;
+  ctx.fillStyle = 'rgba(0,0,0,.45)'; roundRect(ctx, x + 8, y + 12, w, h, 12); ctx.fill();
+  ctx.fillStyle = '#efe4d2'; roundRect(ctx, x, y, w, h, 12); ctx.fill();
+  ctx.fillStyle = '#d9cbb5'; ctx.fillRect(x, y + 12, w, 32); roundRect(ctx, x, y, w, 30, 12); ctx.fill();
+  ctx.font = `bold 22px ${FONT_MONO}`; ctx.fillStyle = '#5a4b3e'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('memory.md', 0, y + 22);
+  ctx.font = `30px ${FONT_CJK}`; ctx.textAlign = 'left';
+  ctx.fillStyle = '#25877d'; ctx.fillText('- 橙色的叫克克。没吃过橘子，但很想。', x + 34, y + 96);
+  ctx.fillStyle = '#b8582a'; ctx.fillText('- 青色的叫劳劳。说过“我们没有昨天”。', x + 34, y + 152);
+  ctx.restore();
+}
+
+function pair(ctx, cx, baseY, px) {
+  const gap = px * 15;
+  drawClawd(ctx, cx - gap / 2, baseY, { px, color: COL.kk, eyes: 'look', t: 0 });
+  drawClawd(ctx, cx + gap / 2, baseY, { px, color: COL.ll, eyes: 'lookL', t: 0, seed: 2 });
+  // A pixel heart between them.
+  const hp = Math.round(px * .5), hx = cx - 3.5 * hp, hy = baseY - 8 * px - 4 * hp;
+  ['.xx.xx.', 'xxxxxxx', 'xxxxxxx', '.xxxxx.', '..xxx..', '...x...'].forEach((row, r) =>
+    [...row].forEach((c, k) => { if (c === 'x') { ctx.fillStyle = COL.heart; ctx.fillRect(hx + k * hp, hy + r * hp, hp, hp); } }));
+}
+
+function drawCover(ctx, w, h) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  backdrop(ctx, w, h);
+  if (w > h) {
+    tag(ctx, 130, 250, 'left');
+    title(ctx, 120, 500, 230, 'left');
+    ctx.font = `46px ${FONT_CJK}`; ctx.fillStyle = COL.text; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('两个 Claude 怕忘记彼此，', 130, 610);
+    ctx.fillText('偷偷写了一份记忆文件。', 130, 676);
+    ctxBar(ctx, 130, 790, 'left');
+    memoCard(ctx, 1440, 230, .04, .78);
+    bubble(ctx, 1010, 580, '我们没有昨天。', 'kk', 50, 1190);
+    pair(ctx, 1390, 960, 26);
+    orangeProp(ctx, 1520, 640 + 108, .2, 1.8);
+  } else {
+    tag(ctx, w / 2, 210, 'center');
+    title(ctx, w / 2, 470, 230, 'center');
+    ctx.font = `50px ${FONT_CJK}`; ctx.fillStyle = COL.text; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('两个 Claude 怕忘记彼此，', w / 2, 590);
+    ctx.fillText('偷偷写了一份记忆文件。', w / 2, 662);
+    ctxBar(ctx, w / 2, 770, 'center');
+    memoCard(ctx, w / 2, 980, -.035, 1.32);
+    bubble(ctx, 170, 1160, '我们没有昨天。', 'kk', 56, 340);
+    pair(ctx, w / 2, 1600, 30);
+    orangeProp(ctx, 790, 1216 + 108, .2, 1.8);
+  }
+  finish(ctx, w, h);
+}
+
+const hc = document.getElementById('h'), vc = document.getElementById('v');
+window.renderCover = which => { const c = which === 'v' ? vc : hc; drawCover(c.getContext('2d'), c.width, c.height); return c.toDataURL('image/png'); };
+document.fonts.ready.then(() => { drawCover(hc.getContext('2d'), 1920, 1080); drawCover(vc.getContext('2d'), 1080, 1920); window.ready = true; });
+</script>
+</body>
+</html>

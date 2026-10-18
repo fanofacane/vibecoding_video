@@ -3,6 +3,7 @@
 //   node render.mjs --stills=3,12 --out=out/stills                          full-res PNG stills
 //   node render.mjs --video [--fps=30] [--workers=4] --out=out/sample.mp4   whole film: frames → sound → MP4
 //   node render.mjs --audio --out=out/sound.wav                             only the synthesized sound track
+//   node render.mjs --cover [--out=out/cover]                               cover images, landscape and portrait
 // Browser: --chrome=<path>, or env CHROME_PATH; otherwise common install locations are tried.
 import puppeteer from 'puppeteer-core';
 import { spawn } from 'node:child_process';
@@ -31,11 +32,11 @@ const browser = await puppeteer.launch({
   args: ['--allow-file-access-from-files', '--window-size=1920,1080', '--disable-renderer-backgrounding', '--disable-background-timer-throttling',
     ...(process.getuid?.() === 0 ? ['--no-sandbox'] : [])],  // Chrome refuses to start as root (e.g. in containers) without it
 });
-async function openPage(tag = '') {
+async function openPage(tag = '', file = 'studio.html') {
   const page = await browser.newPage();
   page.on('console', m => { if (['error', 'warn'].includes(m.type())) console.log(`[page${tag}]`, m.text()); });
   page.on('pageerror', e => console.log(`[page error${tag}]`, e.message));
-  await page.goto(pathToFileURL(stylePath('studio.html')).href, { waitUntil: 'load' });
+  await page.goto(pathToFileURL(stylePath(file)).href, { waitUntil: 'load' });
   await page.waitForFunction('window.ready === true', { timeout: 60000 });
   return page;
 }
@@ -45,7 +46,14 @@ const frameOf = async (page, t, type, q) => {
 };
 const times = s => String(s).split(',').map(Number);
 
-if (args.sheet) {
+if (args.cover) {
+  // Cover images from cover.html: landscape 1920×1080 and portrait 1080×1920.
+  const page = await openPage('', 'cover.html'), out = stylePath(args.out || 'out/cover'); mkdirSync(out, { recursive: true });
+  for (const [k, name] of [['h', 'cover_16x9.png'], ['v', 'cover_9x16.png']]) {
+    const url = await page.evaluate(k => window.renderCover(k), k);
+    writeFileSync(`${out}/${name}`, Buffer.from(url.slice(url.indexOf(',') + 1), 'base64')); console.log(`${out}/${name}`);
+  }
+} else if (args.sheet) {
   const page = await openPage(), out = stylePath(args.out || 'out/sheet.jpg'); mkdirSync(dirname(out), { recursive: true });
   const { url, ms } = await page.evaluate((ts, c, w) => window.renderSheet(ts, c, w), times(args.sheet), +(args.cols || 3), +(args.w || 640));
   writeFileSync(out, Buffer.from(url.slice(url.indexOf(',') + 1), 'base64'));
