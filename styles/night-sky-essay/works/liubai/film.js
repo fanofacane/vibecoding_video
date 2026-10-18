@@ -463,8 +463,10 @@ function sceneTitle(ctx, t) {
   const a = seg(t, TT - .3, TT + .3) * (1 - seg(t, SE - .3, SE + .4));
   ctx.save(); ctx.globalAlpha *= a; backdrop(ctx, { t, lift: .6 }); ctx.restore();
   label(ctx, '一 部 关 于 聊 天 记 录 的 短 片', { t, t0: TT + .3, out: SE - .5, x: W / 2, y: 410, size: 16, align: 'center', spacing: 3 });
-  narr(ctx, '留白', { t, t0: TT + .2, out: SE - .5, x: W / 2, y: 590, size: 180, align: 'center', stagger: .35, glow: COL.warm });
-  narr(ctx, '留白：别把每一天都聊满，给彼此留一点不联系的空隙。', { t, t0: TT + 1.2, out: SE - .5, x: W / 2, y: 690, size: 32, weight: 400, align: 'center', color: COL.dim, stagger: .03 });
+  // The word, and what it means in plain words, together and just as readable.
+  narr(ctx, '留白', { t, t0: TT + .2, out: SE - .5, x: W / 2, y: 480, size: 150, align: 'center', stagger: .3, glow: COL.warm });
+  narr(ctx, '别把每一天都聊满，', { t, t0: TT + .6, out: SE - .5, x: W / 2, y: 620, size: 50, align: 'center', stagger: .05 });
+  narr(ctx, '给彼此留一点不联系的空隙。', { t, t0: TT + 1.3, out: SE - .5, x: W / 2, y: 700, size: 50, align: 'center', stagger: .05, color: COL.warm });
 }
 
 // ================================================================ SE · the sea of words
@@ -998,9 +1000,10 @@ function sceneEnding(ctx, t) {
   }
   if (t >= ED - .3) {
     ctx.save(); ctx.globalAlpha *= seg(t, ED - .3, ED + .4); backdrop(ctx, { t, lift: .6 }); ctx.restore();
-    narr(ctx, '留白', { t, t0: ED + .3, x: W / 2, y: 560, size: 180, align: 'center', stagger: .35, glow: COL.warm });
-    narr(ctx, '就是别把每一天都聊满，给彼此留一点不说话的时间。', { t, t0: ED + 1.4, x: W / 2, y: 680, size: 32, weight: 400, align: 'center', color: COL.ink, stagger: .035 });
-    narr(ctx, '最亲的人，也需要一点“好久不见”。', { t, t0: ED + 3.2, x: W / 2, y: 740, size: 28, weight: 400, align: 'center', color: COL.dim, stagger: .04 });
+    narr(ctx, '留白', { t, t0: ED + .3, x: W / 2, y: 470, size: 150, align: 'center', stagger: .3, glow: COL.warm });
+    narr(ctx, '就是别把每一天都聊满，', { t, t0: ED + .8, x: W / 2, y: 610, size: 50, align: 'center', stagger: .05 });
+    narr(ctx, '给彼此留一点不说话的时间。', { t, t0: ED + 1.6, x: W / 2, y: 690, size: 50, align: 'center', stagger: .05, color: COL.warm });
+    narr(ctx, '最亲的人，也需要一点“好久不见”。', { t, t0: ED + 3.2, x: W / 2, y: 790, size: 30, weight: 400, align: 'center', color: COL.dim, stagger: .04 });
   }
 }
 
