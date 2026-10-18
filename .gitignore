@@ -4,3 +4,4 @@ out/
 
 # music extracted from user-supplied video; not redistributed
 styles/sitcom-flat/works/*/assets/music.*
+__pycache__/
