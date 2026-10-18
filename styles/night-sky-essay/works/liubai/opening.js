@@ -1,10 +1,9 @@
-// opening.js: the opening of 《留白》 on its own, for review (about 16 s).
-// Three kinds of moving type only: lines pushed in from below (and kept, building a block), one word at a time
-// filling the frame on the beat (then settling into a vertical column), and wipes that swap the whole page.
+// opening.js: the opening of 《留白》 on its own, for review (8 s).
+// Three kinds of moving type only: lines pushed in from below (and kept, building a block), and wipes that swap the whole page.
 // Horizontal and vertical text are mixed so the frame is never just one line.
 
-// Laid out on a 16 s timeline (TL) and played back in 5 s.
-const TL_DUR = 16.0, DUR = 8.0, SPEED = TL_DUR / DUR;
+// Laid out on a 13.1 s timeline (TL) and played back in 8 s.
+const TL_DUR = 13.1, DUR = 8.0, SPEED = TL_DUR / DUR;
 const BLUE = '#3d6cf0';
 
 // ---------------------------------------------------------------- helpers
@@ -55,10 +54,6 @@ function corners(ctx, t, a) {
 
 // ---------------------------------------------------------------- page 1: the pattern
 
-const BEATS = [3.7, 4.3, 4.9, 5.5];
-const WORDS = ['早安', '到了吗', '嗯', '晚安'];
-const COLS_X = [1700, 1500, 1300, 1120];
-
 function page1(ctx, t) {
   // Block A — the lovers: three lines pushed in, kept.
   vtext(ctx, '恋人', 104, 250, 22, COL.dim, seg(t, .3, .8));
@@ -68,63 +63,30 @@ function page1(ctx, t) {
     [[['话却', COL.ink], ['越来越少', BLUE], ['了。', COL.ink]], 2.4],
   ], 150, 480, 66, 92);
 
-  // Block B — one word per beat: it first fills the frame, then settles into a vertical column on the right.
-  WORDS.forEach((w, i) => {
-    const b = BEATS[i];
-    if (t < b) return;
-    const f = seg(t, b + .28, b + .62), k = easeInOut(f);
-    const settled = t > b + .62;
-    const sizeBig = 300, sizeCol = 150;
-    const n = [...w].length;
-    const yBig = H / 2 - n * sizeBig * 1.04 / 2, yCol = 150;
-    // While it fills the frame, everything else steps back.
-    if (!settled) {
-      const bounce = 1 + .12 * (1 - easeOut(seg(t, b, b + .2)));
-      ctx.save();
-      ctx.fillStyle = `rgba(6,7,9,${.88 * (1 - k)})`; ctx.fillRect(0, 0, W, H);
-      ctx.translate(lerp(W / 2, COLS_X[i], k), lerp(yBig, yCol, k));
-      ctx.scale(lerp(bounce, sizeCol / sizeBig, k), lerp(bounce, sizeCol / sizeBig, k));
-      vtext(ctx, w, 0, 0, sizeBig, COL.ink, 1, null, 'rgba(237,232,228,.35)');
-      ctx.restore();
-    }
-  });
-
   // Block C — the friend: three more lines pushed in under block A, in warm white.
-  vtext(ctx, '老朋友', 104, 700, 22, COL.dim, seg(t, 6.2, 6.7));
+  vtext(ctx, '老朋友', 104, 700, 22, COL.dim, seg(t, 3.3, 3.8));
   pushBlock(ctx, t, [
-    ['反而是那个好久没联系的朋友，', 6.3],
-    ['一句“在吗”，', 7.2],
-    [[['就能聊到', COL.warm], ['凌晨两点', BLUE], ['。', COL.warm]], 8.1],
+    ['反而是那个好久没联系的朋友，', 3.4],
+    ['一句“在吗”，', 4.3],
+    [[['就能聊到', COL.warm], ['凌晨两点', BLUE], ['。', COL.warm]], 5.2],
   ], 150, 930, 58, 84);
   // A thin rule between the two blocks.
-  ctx.fillStyle = COL.line; ctx.fillRect(150, 580, 760 * easeOut(seg(t, 6.0, 6.8)), 1);
-}
-
-// The settled columns stay on screen through the wipe; on page 2 they shrink a little and pack to the right.
-const COLS_X2 = [1790, 1640, 1490, 1340];
-function columns(ctx, t) {
-  const m = easeInOut(seg(t, 8.9, 9.9));
-  WORDS.forEach((w, i) => {
-    const b = BEATS[i];
-    if (t <= b + .62) return;
-    // Fully visible the whole time: these words stay on the page.
-    vtext(ctx, w, lerp(COLS_X[i], COLS_X2[i], m), lerp(150, 200, m), lerp(150, 134, m), i === 2 ? BLUE : COL.ink, 1, null, 'rgba(237,232,228,.25)');
-  });
+  ctx.fillStyle = COL.line; ctx.fillRect(150, 580, 760 * easeOut(seg(t, 3.1, 3.9)), 1);
 }
 
 // ---------------------------------------------------------------- page 2: the question
 
 function page2(ctx, t) {
   // A big vertical 为什么 on the left, the question to its right.
-  vtext(ctx, '为什么', 210, 200, 200, COL.ink, 1, i => seg(t, 9.6 + i * .12, 10.0 + i * .12), 'rgba(237,232,228,.25)');
-  ctx.fillStyle = COL.line; ctx.fillRect(360, 200, 1, 680 * easeOut(seg(t, 9.8, 10.6)));
+  vtext(ctx, '为什么', 210, 200, 200, COL.ink, 1, i => seg(t, 6.7 + i * .12, 7.1 + i * .12), 'rgba(237,232,228,.25)');
+  ctx.fillStyle = COL.line; ctx.fillRect(360, 200, 1, 680 * easeOut(seg(t, 6.9, 7.7)));
   ctx.save();
   ctx.font = `500 62px ${SERIF}`; ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
   const q1 = [['天天联系的人，话', COL.ink], ['越来越少', COL.dim], ['；', COL.ink]];
   let x = 420; for (const [s, c] of q1) { ctx.fillStyle = c; ctx.fillText(s, x, 430); x += ctx.measureText(s).width; }
   ctx.restore();
   // Second line arrives under a horizontal wipe moving down.
-  const w2 = seg(t, 11.0, 11.7), by = lerp(470, 600, easeInOut(w2));
+  const w2 = seg(t, 8.1, 8.8), by = lerp(470, 600, easeInOut(w2));
   if (w2 > 0) {
     ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, by); ctx.clip();
     ctx.font = `500 62px ${SERIF}`; ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
@@ -135,14 +97,14 @@ function page2(ctx, t) {
   }
   // Supporting lines pushed in underneath, and a vertical note on the far right.
   pushBlock(ctx, t, [
-    [[['这部片子想回答的，就是这个问题。', COL.dim]], 12.4],
-    [[['先从一段', COL.dim], ['聊天记录', COL.ink], ['说起。', COL.dim]], 13.3],
+    [[['这部片子想回答的，就是这个问题。', COL.dim]], 9.5],
+    [[['先从一段', COL.dim], ['聊天记录', COL.ink], ['说起。', COL.dim]], 10.4],
   ], 424, 820, 38, 60);
 }
 
 // ---------------------------------------------------------------- frame
 
-const WIPE1 = [8.9, 9.7];   // vertical bar sweeps left to right: page 1 → page 2
+const WIPE1 = [6.0, 6.8];   // vertical bar sweeps left to right: page 1 → page 2
 
 function drawFrame(ctx, real) {
   const t = real * SPEED;
@@ -152,10 +114,9 @@ function drawFrame(ctx, real) {
   const out = 1 - seg(t, TL_DUR - .8, TL_DUR - .1);
   ctx.save(); ctx.globalAlpha *= out;
   corners(ctx, t, 1);
-  const w = seg(t, WIPE1[0], WIPE1[1]), bx = lerp(-20, 1300, easeInOut(w));
+  const w = seg(t, WIPE1[0], WIPE1[1]), bx = lerp(-20, W + 20, easeInOut(w));
   if (t < WIPE1[1] + .1) { ctx.save(); ctx.beginPath(); ctx.rect(t > WIPE1[1] ? W : bx, 0, W, H); ctx.clip(); page1(ctx, t); ctx.restore(); }
   if (t > WIPE1[0]) { ctx.save(); ctx.beginPath(); ctx.rect(0, 0, bx, H); ctx.clip(); page2(ctx, t); ctx.restore(); }
-  columns(ctx, t);
   if (w > 0 && w < 1) { ctx.fillStyle = BLUE; ctx.shadowColor = 'rgba(61,108,240,.9)'; ctx.shadowBlur = 24; ctx.fillRect(bx - 1.5, 0, 3, H); ctx.shadowBlur = 0; }
   ctx.restore();
   const black = 1 - seg(real, 0, .15) + seg(real, DUR - .12, DUR);
@@ -166,9 +127,8 @@ function drawFrame(ctx, real) {
 // ---------------------------------------------------------------- sound
 
 const CUES = [
-  ...BEATS.map((b, i) => ({ t: b / SPEED, kind: 'note', f: [523.3, 587.3, 392, 523.3][i] })),
-  { t: WIPE1[0] / SPEED, kind: 'whoosh' }, { t: 11.0 / SPEED, kind: 'whoosh' },
-  { t: 11.7 / SPEED, kind: 'chord', notes: [146.8, 220, 293.7, 370] },
+  { t: WIPE1[0] / SPEED, kind: 'whoosh' }, { t: 8.1 / SPEED, kind: 'whoosh' },
+  { t: 8.8 / SPEED, kind: 'chord', notes: [146.8, 220, 293.7, 370] },
 ];
 const PAD = [[.05, [87.3, 130.8, 220]], [3.0, [98, 146.8, 246.9, 293.7]], [5.2, [110, 164.8, 261.6, 329.6]]];
 
