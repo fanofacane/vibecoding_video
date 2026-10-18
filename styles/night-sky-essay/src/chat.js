@@ -46,7 +46,8 @@ function bubble(ctx, it, x, y, a = 1) {
 }
 
 // o: { t, x (column left), w (column width), top, bot (visible band), items, scroll (0 = newest at the bottom,
-//      1 = oldest at the top), fade (px of soft edge), a (alpha), dx (extra x shift), fromTop (start at the top) }
+//      1 = oldest at the top), fade (px of soft edge), a (alpha), dx (extra x shift), fromTop (start at the top),
+//      y0 (screen y of the top of the content; overrides the automatic placement) }
 // Returns the y of the bottom of the content.
 function chatColumn(ctx, o) {
   const t = o.t, items = chatLayout(ctx, o.items), fade = o.fade ?? 120;
@@ -57,6 +58,7 @@ function chatColumn(ctx, o) {
   const view = o.bot - o.top, maxOff = Math.max(0, total - view + 30);
   let y = o.bot - 30 - total + (o.scroll || 0) * maxOff;
   if (o.fromTop) y = Math.min(y, o.top + 20);   // a live chat starts at the top and scrolls once it is full
+  if (o.y0 !== undefined) y = o.y0;             // or the caller places the top of the content itself
   ctx.save(); ctx.globalAlpha *= o.a ?? 1;
   for (const it of items) {
     const k = grow(it); if (k <= 0) continue;
@@ -76,6 +78,16 @@ function chatColumn(ctx, o) {
   }
   ctx.restore();
   return y;
+}
+
+// Height of the chat content at time t (items still to come count as zero).
+function chatHeight(ctx, items, t) {
+  let total = 0;
+  for (const it of chatLayout(ctx, items)) {
+    const k = it.typing ? 0 : it.at === undefined ? 1 : easeOut(seg(t, it.at, it.at + .35));
+    total += it.h * k;
+  }
+  return total;
 }
 
 // Three bouncing dots in the speaker's bubble colour.

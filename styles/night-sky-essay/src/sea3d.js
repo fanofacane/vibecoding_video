@@ -3,7 +3,7 @@
 // line every few seconds, one character at a time. A "collapse" can turn every sentence into one word.
 //
 // sea3d(ctx, o) with o: { t, cam: { x, y, z }, pool: [sentences], big: [short words shown larger],
-//                          collapse: { t0, to } (from t0 every star decodes into `to`), a,
+//                          collapse: { t0, to } (from t0 every star decodes into `to`, a word or a list), a,
 //                          hole: { x, y, r, k } (dim stars around a point, e.g. behind narration) }
 
 const SEA3D = { n: 300, depth: 6000, spanX: 3800, spanY: 2300, f: 1000 };
@@ -19,7 +19,8 @@ function starText(i, t, pool, big, collapse) {
   let prev = pick(c - 1), next = pick(c), k = seg(into, 0, .55);
   if (collapse && t > collapse.t0) {
     const s = collapse.t0 + hash(i + 99) * 1.1;
-    if (t > s) { prev = next; next = collapse.to; k = seg(t, s, s + .45); }
+    const to = Array.isArray(collapse.to) ? collapse.to[Math.floor(hash(i * 3 + 7) * collapse.to.length)] : collapse.to;
+    if (t > s) { prev = next; next = to; k = seg(t, s, s + .45); }
   }
   if (k >= 1) return { text: next, big: isBig || (collapse && t > collapse.t0 + 1.6) };
   // Decode: the first part already shows the new line, then a few scrambling characters, then the old tail.

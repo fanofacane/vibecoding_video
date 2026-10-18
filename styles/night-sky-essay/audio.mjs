@@ -25,7 +25,8 @@ export function synth(cues, pad, dur) {
       case 'tick': add(c.t, .03, x => sin(1800 + (c.pitch ?? .5) * 900, x) * Math.exp(-x * 220) * (c.quiet ? .025 : .05), (r - .5) * .6); break;
       case 'rain': {   // a swelling wash of filtered noise that stops dead at the end
         let y = 0;
-        add(c.t, c.dur, x => { y += (hash(ci * 977 + x * SR) - .5 - y) * .35; return y * (x / c.dur) ** 2 * .55 * Math.min(1, (c.dur - x) * 200); }, 0);
+        const env = x => c.shape === 'hump' ? Math.sin(Math.PI * x / c.dur) ** 2 * .45 : (x / c.dur) ** 2 * .55 * Math.min(1, (c.dur - x) * 200);
+        add(c.t, c.dur, x => { y += (hash(ci * 977 + x * SR) - .5 - y) * .35; return y * env(x); }, 0);
         break;
       }
       case 'swell': {  // rising, slightly detuned string-like chord
@@ -39,10 +40,10 @@ export function synth(cues, pad, dur) {
       }
       case 'ding': {   // message notification: two bright tones
         const f = 1318.5 * (1 + (c.pitch ?? 0) * .12);
-        add(c.t, .8, x => (piano(f, x, 5) + .6 * piano(f * 1.5, Math.max(0, x - .07), 6) * (x > .07)) * .07, (r - .5) * .9);
+        add(c.t, .8, x => (piano(f, x, 5) + .6 * piano(f * 1.5, Math.max(0, x - .07), 6) * (x > .07)) * .026 * (c.gain ?? 1), (r - .5) * .9);
         break;
       }
-      case 'send': add(c.t, .18, x => sin(700 + x * 2200, x) * Math.exp(-x * 22) * .09, .3); break;
+      case 'send': add(c.t, .12, x => sin(900 + x * 900, x) * Math.exp(-x * 40) * .02 * (c.gain ?? 1), .25); break;
       case 'whoosh': {
         let y = 0;
         add(c.t, .7, x => { const env = Math.sin(Math.PI * x / .7) ** 2; y += (hash(ci * 31 + x * SR) - .5 - y) * (.02 + .12 * env); return y * env * 1.1; });
