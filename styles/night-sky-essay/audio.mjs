@@ -28,6 +28,7 @@ export function synth(cues, pad, dur) {
         add(c.t, .8, x => (piano(f, x, 5) + .6 * piano(f * 1.5, Math.max(0, x - .07), 6) * (x > .07)) * .07, (r - .5) * .9);
         break;
       }
+      case 'send': add(c.t, .18, x => sin(700 + x * 2200, x) * Math.exp(-x * 22) * .09, .3); break;
       case 'whoosh': {
         let y = 0;
         add(c.t, .7, x => { const env = Math.sin(Math.PI * x / .7) ** 2; y += (hash(ci * 31 + x * SR) - .5 - y) * (.02 + .12 * env); return y * env * 1.1; });

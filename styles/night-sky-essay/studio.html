@@ -25,7 +25,7 @@
 </main>
 <script src="src/util.js"></script>
 <script src="src/fx.js"></script>
-<script src="src/phone.js"></script>
+<script src="src/chat.js"></script>
 <script src="src/wordsea.js"></script>
 <script src="src/broll.js"></script>
 <script>document.write(`<script src="works/${WORK_ID}/${CUT_ID}.js"><\/script>`);</script>
@@ -64,7 +64,7 @@
   scrub.oninput = () => show(+scrub.value);
 
   // Canvas text does not trigger font loading by itself: load every face up front.
-  const faces = ['400', '600', '700'].map(w => `${w} 40px "Noto Serif SC"`).concat(['300', '400', '500', '600', '700'].map(w => `${w} 40px "Noto Sans SC"`));
+  const faces = ['400', '500', '600', '700'].map(w => `${w} 40px "Noto Serif SC"`).concat(['300', '400', '500', '600', '700'].map(w => `${w} 40px "Noto Sans SC"`));
   Promise.all(faces.map(f => document.fonts.load(f, '我们每天都在聊'))).catch(() => {}).then(() => document.fonts.ready)
     .then(() => { show(0); window.ready = true; });
 </script>

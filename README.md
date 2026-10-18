@@ -9,7 +9,7 @@
 | 情景喜剧群聊风 · `sitcom-flat` | 《爱情公寓》式扁平卡通片头、Logo 当角色、角色介绍卡、手机群聊段子、按歌词卡点剪辑 | 《AI 甄嬛传》第一集《朕只是想改个标题》 | [风格说明](styles/sitcom-flat/README.md) · [制作规范](styles/sitcom-flat/STYLE_GUIDE.md) |
 | 水彩墨线手绘动画 · `watercolor-ink` | 纸张纹理、水彩晕染、手绘墨线、角色表演、连续分镜 | Clawd 音乐视频《I'm Upping My P(doom)》 | [风格说明与制作流程](styles/watercolor-ink/README.md) |
 | 像素终端对话 · `pixel-terminal` | 暗色终端双栏聊天、像素 Clawd、逐字打字、上下文进度条与压缩、科普卡 | 双 Clawd 短片《没有昨天》 | [风格说明与制作流程](styles/pixel-terminal/README.md) |
-| 夜空图文随笔 · `night-sky-essay` | 深蓝夜空、聊天记录、PPT 式科普卡、B-roll 解释动画、词海星空，旁白排版轮换 | 《留白》30 秒样片 | [风格说明与制作流程](styles/night-sky-essay/README.md) |
+| 夜空图文随笔 · `night-sky-essay` | 黑底胶片质感、浮在画面上的聊天气泡、大号衬线数字、PPT 式科普卡、B-roll 解释动画、词海星空，旁白排版轮换 | 《留白》30 秒样片 | [风格说明与制作流程](styles/night-sky-essay/README.md) |
 
 风格以视觉语言命名。Clawd 是当前示例的角色，P(doom) 是当前作品的主题，均不作为风格分类标准。
 
@@ -52,7 +52,7 @@ styles/
     references/           参考截图与早期提案
   night-sky-essay/         夜空图文随笔
     README.md             风格定义与命令
-    src/                  夜空、手机聊天、词海星空、解释动画组件
+    src/                  背景、聊天气泡列、词海星空、解释动画组件
     works/liubai/         《留白》时间线、字体子集与样片
     tools/fetch-fonts.mjs 按用字下载 Noto 字体子集
     studio.html           预览与渲染页面

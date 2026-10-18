@@ -56,7 +56,7 @@ function dailyCups(ctx, o) {
     // Liquid.
     if (level > .5) {
       const g = ctx.createLinearGradient(0, o.y - level, 0, o.y);
-      g.addColorStop(0, rgba(COL.warm, .95)); g.addColorStop(1, rgba(COL.partner, .8));
+      g.addColorStop(0, rgba(COL.warm, .95)); g.addColorStop(1, rgba(COL.warm, .55));
       ctx.fillStyle = g; ctx.fillRect(cx + 5, o.y - level - 3, cw - 10, level);
     }
     // Glass.

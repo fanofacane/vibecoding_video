@@ -1,0 +1,82 @@
+// chat.js: chat logs as a column of bubbles floating on the backdrop (no phone frame).
+// Their bubbles: dark grey on the left. Mine: warm white with a soft glow on the right.
+//
+// A chat is an array of items:
+//   { who: 'me'|'them', text }      bubble
+//   { date: '2026年4月18日 23:14' }  tiny centred time stamp
+// Any item may carry `at` (seconds): it fades in at that time and pushes the column up.
+
+const BUB = { font: 22, line: 31, padX: 17, padY: 11, r: 7, maxW: 330, gap: 12, turn: 26, date: 54 };
+const CHAT_LAYOUTS = new WeakMap();
+
+function chatLayout(ctx, items) {
+  if (CHAT_LAYOUTS.has(items)) return CHAT_LAYOUTS.get(items);
+  ctx.save(); ctx.font = `400 ${BUB.font}px ${SANS}`;
+  let prev = null;
+  const out = items.map(it => {
+    if (it.date) { prev = null; return { ...it, h: BUB.date }; }
+    const lines = wrap(ctx, it.text, BUB.maxW);
+    const bw = Math.max(...lines.map(l => ctx.measureText(l).width)) + BUB.padX * 2;
+    const bh = lines.length * BUB.line + BUB.padY * 2 - (BUB.line - BUB.font);
+    const space = prev === null ? 0 : prev === it.who ? BUB.gap : BUB.turn;
+    prev = it.who;
+    return { ...it, lines, bw, bh, space, h: bh + space };
+  });
+  ctx.restore();
+  CHAT_LAYOUTS.set(items, out);
+  return out;
+}
+
+// One bubble with its top-left at (x, y).
+function bubble(ctx, it, x, y, a = 1) {
+  if (a <= 0) return;
+  const me = it.who === 'me';
+  ctx.save(); ctx.globalAlpha *= a;
+  roundRect(ctx, x, y, it.bw, it.bh, BUB.r);
+  if (me) { ctx.shadowColor = 'rgba(243,217,166,.38)'; ctx.shadowBlur = 26; }
+  ctx.fillStyle = me ? COL.me : COL.them; ctx.fill();
+  ctx.shadowColor = 'transparent';
+  if (!me) { ctx.strokeStyle = 'rgba(255,255,255,.05)'; ctx.lineWidth = 1; ctx.stroke(); }
+  ctx.font = `400 ${BUB.font}px ${SANS}`; ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
+  ctx.fillStyle = me ? COL.meText : COL.themText;
+  it.lines.forEach((l, i) => ctx.fillText(l, x + BUB.padX, y + BUB.padY + BUB.font * .86 + i * BUB.line));
+  ctx.restore();
+}
+
+// o: { t, x (column left), w (column width), top, bot (visible band), items, scroll (0 = newest at the bottom,
+//      1 = oldest at the top), fade (px of soft edge), a (alpha), dx (extra x shift) }
+// Returns the y of the bottom of the content.
+function chatColumn(ctx, o) {
+  const t = o.t, items = chatLayout(ctx, o.items), fade = o.fade ?? 120;
+  const grow = it => it.at === undefined ? 1 : easeOut(seg(t, it.at, it.at + .35));
+  let total = 0;
+  for (const it of items) total += it.h * grow(it);
+  const view = o.bot - o.top, maxOff = Math.max(0, total - view + 30);
+  let y = o.bot - 30 - total + (o.scroll || 0) * maxOff;
+  ctx.save(); ctx.globalAlpha *= o.a ?? 1;
+  for (const it of items) {
+    const k = grow(it); if (k <= 0) continue;
+    const top = y + (it.space || 0) * k;
+    y += it.h * k;
+    if (y < o.top - 60 || top > o.bot + 60) continue;
+    const edge = seg(top - o.top, -20, fade) * seg(o.bot - (top + (it.bh || 20)), -20, fade);
+    if (it.date) {
+      ctx.save(); ctx.globalAlpha *= edge * k;
+      label(ctx, it.date, { t: 1, t0: 0, x: o.x + o.w / 2, y: top + 33, size: 14, align: 'center', color: COL.dim, spacing: 1.5 });
+      ctx.restore();
+      continue;
+    }
+    const x = (it.who === 'me' ? o.x + o.w - it.bw : o.x) + (o.dx || 0);
+    bubble(ctx, it, x, top + (1 - k) * 14, edge * k);
+  }
+  ctx.restore();
+  return y;
+}
+
+// A bubble on its own (for messages that spill out of the column). (x, y) is its centre.
+function looseBubble(ctx, it, x, y, o = {}) {
+  const L = chatLayout(ctx, [it])[0], s = o.s ?? 1;
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  bubble(ctx, L, -L.bw / 2, -L.bh / 2, o.a ?? 1);
+  ctx.restore();
+}

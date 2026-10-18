@@ -7,7 +7,8 @@
 // o: { t, words, cam, burst: { x, y, t0 } (words fly out from this point), light: { text: t0 } (brighten),
 //      focus (0..1, dims the rest and brings the hidden words forward) }
 
-const PASTEL = ['#f2ebdf', '#ffd38a', '#ff9a62', '#4fd1c5', '#b9a6ff', '#ff9ec7', '#8fb6ff', '#ffe082'];
+// Muted, mostly warm whites with faint tints, so the sea stays quiet on near-black.
+const PASTEL = ['#ece6da', '#d9c9ab', '#b9b1a4', '#c8b7b0', '#aab4bb', '#d6c39d', '#bdb7c8', '#e3d8c4'];
 
 function wordSea(ctx, o) {
   const t = o.t, cam = o.cam, words = o.words;

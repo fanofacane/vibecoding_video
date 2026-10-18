@@ -19,7 +19,7 @@ for (let c = 32; c < 127; c++) chars.add(String.fromCharCode(c));
 const subset = [...chars].sort().join('');
 console.log(`${chars.size} characters`);
 
-const FAMILIES = [['Noto Serif SC', '400;600;700'], ['Noto Sans SC', '300;400;500;600;700']];
+const FAMILIES = [['Noto Serif SC', '400;500;600;700'], ['Noto Sans SC', '300;400;500;600;700']];
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
 const curl = (url, extra = []) => execFileSync('curl', ['-sSfL', '-A', UA, ...extra, url], { maxBuffer: 1 << 28 });
 
