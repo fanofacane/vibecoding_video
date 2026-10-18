@@ -1,0 +1,10 @@
+{
+  "name": "night-sky-essay",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Night-sky essay videos: chat logs, explainer cards, b-roll animations and a sea of words under the stars.",
+  "type": "module",
+  "dependencies": {
+    "puppeteer-core": "^25.11.0"
+  }
+}
