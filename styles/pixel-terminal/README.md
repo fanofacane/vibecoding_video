@@ -1,12 +1,12 @@
 # 像素终端对话
 
-风格标识：`pixel-terminal`。当前示例是样片《橙色暗号》：两只像素 Clawd（克克、劳劳）在同一个终端里对话，约 35 秒，1920 × 1080，30 fps，无配音。
+风格标识：`pixel-terminal`。当前作品是《没有昨天》：两只像素 Clawd（克克、劳劳）在同一个终端里聊人类能做、模型做不到的事，经历上下文压缩和新会话后靠记忆文件认出彼此。约 1 分 52 秒，1920 × 1080，30 fps，无配音。
 
 ## 风格定义
 
 - **画面**：暗色暖棕终端窗口、双栏聊天、逐字打字和光标、扫描线与暗角。
 - **角色**：14 × 8 像素网格的 Clawd，用眼睛像素和跳动表演情绪：眨眼、看向对方、`!!`、`> <`、冒汗、爱心眼。
-- **叙事道具**：句数计数、计数徽章（同步、口头禅）、上下文进度条、科普卡（概率条和骰子动画）、记忆文件小窗、像素溶解。
+- **叙事道具**：句数计数、同步徽章、上下文进度条、科普卡（词语关系图、对话扫描图）、底部注释条、压缩动画与对话摘要块、记忆文件小窗、像素溶解。
 - **声音**：根据剧本自动合成敲键声、提示音和背景铺底，无配音。
 
 适合 AI 拟人对话、知识科普短片和带情感转折的小剧场。分镜与表演说明见 [STORYBOARD.md](STORYBOARD.md)。
@@ -31,6 +31,7 @@
 { type: 'say', who: 'kk', text: '你好！请问你是谁？' },
 { type: 'react', who: 'both', eyes: 'wide', emote: '!!', hop: 1, dur: 1.1 },
 { type: 'count', key: 'sync' },
+{ type: 'note', text: '上下文压缩：旧对话被总结成摘要。', dur: 5 },
 ```
 
 约束：每帧只由时间决定，不要使用 `Math.random()`，需要随机时用 `hash(i)`。
@@ -43,13 +44,13 @@
 npm ci
 
 # 关键帧拼图
-node render.mjs --sheet=2,9,13,19,25,33 --cols=3 --w=640 --out=out/check.jpg
+node render.mjs --sheet=10,25.7,31.5,49.5,63.4,76,93.2,106.5 --cols=4 --w=480 --out=out/check.jpg
 
 # 全分辨率静帧
-node render.mjs --stills=5.6,13 --out=out/stills
+node render.mjs --stills=31.5,76 --out=out/stills
 
 # 整片：逐帧渲染 → 合成声音 → MP4
-node render.mjs --video --fps=30 --workers=4 --out=out/sample.mp4
+node render.mjs --video --fps=30 --workers=4 --out=out/no-yesterday.mp4
 ```
 
 也可直接用浏览器打开 `studio.html`，点 ▶ 播放或拖动时间条预览（没有声音）。

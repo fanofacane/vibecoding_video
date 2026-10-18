@@ -18,6 +18,8 @@ const EYES = {
   happy: [[3, 2], [4, 1], [5, 2]],
   squeeze: [[3, 1], [4, 2], [3, 3]],  // > <  overwhelmed
   heart: [[3, 1], [5, 1], [3, 2], [4, 2], [5, 2], [4, 3]],
+  flat: [[3, 2], [4, 2], [5, 2]],   // eyes shut in a line
+  down: [[4, 3], [4, 4]],            // looking down at itself
   look: [[5, 1], [5, 2]],          // looking toward the right
   lookL: [[3, 1], [3, 2]],         // looking toward the left
 };

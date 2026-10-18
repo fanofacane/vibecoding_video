@@ -7,7 +7,7 @@
 | 风格 | 视觉特点 | 当前示例 | 入口 |
 | --- | --- | --- | --- |
 | 水彩墨线手绘动画 · `watercolor-ink` | 纸张纹理、水彩晕染、手绘墨线、角色表演、连续分镜 | Clawd 音乐视频《I'm Upping My P(doom)》 | [风格说明与制作流程](styles/watercolor-ink/README.md) |
-| 像素终端对话 · `pixel-terminal` | 暗色终端双栏聊天、像素 Clawd、逐字打字、计数徽章与上下文进度条、科普卡 | 双 Clawd 样片《橙色暗号》 | [风格说明与制作流程](styles/pixel-terminal/README.md) |
+| 像素终端对话 · `pixel-terminal` | 暗色终端双栏聊天、像素 Clawd、逐字打字、上下文进度条与压缩、科普卡 | 双 Clawd 短片《没有昨天》 | [风格说明与制作流程](styles/pixel-terminal/README.md) |
 
 风格以视觉语言命名。Clawd 是当前示例的角色，P(doom) 是当前作品的主题，均不作为风格分类标准。
 
@@ -30,7 +30,7 @@ styles/
     out/                  生成结果，不提交 Git
   pixel-terminal/          像素终端对话
     README.md             风格定义、剧本写法与导出命令
-    STORYBOARD.md         样片《橙色暗号》分镜与表演说明
+    STORYBOARD.md         《没有昨天》分镜与表演说明
     src/script.js         剧本数据（改台词只改这里）
     src/                  场景、像素 Clawd 与工具函数
     studio.html           浏览器预览与渲染页面

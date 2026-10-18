@@ -28,6 +28,7 @@ export function synth(cues, dur) {
         add(c.t, .4, x => { const env = Math.sin(Math.PI * x / .4) ** 2; y += (hash(ci * 31 + x * SR) - .5 - y) * (.04 + .25 * env); return y * env * .9; });
         break;
       }
+      case 'squish': add(c.t, .7, x => sin(520 - x * 600, x) * Math.exp(-x * 3) * .14 + (hash(ci * 7 + x * SR) - .5) * .05 * Math.exp(-x * 6)); break;
       case 'beep': add(c.t, .13, x => Math.sign(sin(880, x)) * .05 * (x < .11 ? 1 : 0) * Math.min(1, x * 200)); break;
       case 'glitch': add(c.t, .85, x => {
         const gate = hash(Math.floor(x * 40) + ci) > .35 ? 1 : 0;
