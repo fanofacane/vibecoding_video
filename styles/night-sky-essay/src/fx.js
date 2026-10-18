@@ -20,7 +20,8 @@ function backdrop(ctx, o = {}) {
 
 let GRAIN = null;
 // Vignette plus a light grain that changes every frame (seeded by frame number).
-function finish(ctx, t) {
+// o: { vignette (darkness at the edges, default .6; use ~.12 on white), grain (alpha per grain, default 10) }
+function finish(ctx, t, o = {}) {
   if (!GRAIN) {
     GRAIN = [];
     for (let k = 0; k < 4; k++) {
@@ -35,7 +36,7 @@ function finish(ctx, t) {
   }
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1;
   const v = ctx.createRadialGradient(W / 2, H / 2, H * .35, W / 2, H / 2, H * 1.0);
-  v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.6)');
+  v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, `rgba(0,0,0,${o.vignette ?? .6})`);
   ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
   ctx.drawImage(GRAIN[Math.floor(t * 24) % 4], 0, 0, W, H);
 }
@@ -44,7 +45,10 @@ function finish(ctx, t) {
 // and fades out as a block. Wraps to maxW. Returns the block height.
 // o: { x, y, t, t0, out (fade-out start), size, maxW, align, color, weight, lineH, stagger,
 //      glow (colour), halo (dark backing), tail (0..1: the last characters fade toward dim, like a trailing voice) }
+// text may be an array of [text, colour] parts, to colour single words (e.g. a highlighted keyword).
 function narr(ctx, text, o) {
+  let colors = null;
+  if (Array.isArray(text)) { colors = text.flatMap(([s, c]) => [...s].map(() => c)); text = text.map(([s]) => s).join(''); }
   const t = o.t, size = o.size || 54, lineH = o.lineH || size * 1.55, stagger = o.stagger ?? .055;
   const outK = o.out !== undefined ? 1 - ease(seg(t, o.out, o.out + .5)) : 1;
   if (t < o.t0 || outK <= 0) return 0;
@@ -64,7 +68,7 @@ function narr(ctx, text, o) {
         ctx.globalAlpha = easeOut(k) * outK * fadeTail;
         if (o.glow) { ctx.shadowColor = rgba(o.glow, .55); ctx.shadowBlur = size * .4; }
         else if (o.halo) { ctx.shadowColor = 'rgba(0,0,0,.95)'; ctx.shadowBlur = 24; }
-        ctx.fillStyle = o.color || COL.ink;
+        ctx.fillStyle = (colors && colors[n]) || o.color || COL.ink;
         ctx.fillText(ch, x, y + (1 - easeOut(k)) * size * .2);
       }
       x += ctx.measureText(ch).width; n++;
