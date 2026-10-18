@@ -2,7 +2,8 @@
 //   0:00  day 1, live: one message after another, faster and faster, they can't stop talking
 //   0:09  the chat log scrolls down through four years (chat moves left, narration on the right), then slows…
 //   0:18  …and lands in the latest conversation, which goes on live: she talks, I answer in a word or two
-//   0:29  the window pulls back to 50 copies of itself, all racing through their history; messages burst out
+//   0:29  copies slide out of the window while the camera pulls back and turns; 50 windows race through their
+//         history; the camera dives through them and the messages burst out
 //   0:32  the sea of words: a 3-D flight through sentences that keep changing; they end as one-word brush-offs
 // One chat window through all of act 1. The history is already there below the window: scrolling reveals it.
 
@@ -173,56 +174,92 @@ function narration(ctx, t, ctxDay) {
   }
 }
 
-// ---------------------------------------------------------------- the wall of 50 windows
+// ---------------------------------------------------------------- 50 windows in 3-D space
 
-const GRID = { cols: 10, rows: 5, cw: 192, ch: 216, s: .2 };
+// The windows hang in 3-D space (world units = screen pixels at the start). The original sits at the origin,
+// framed exactly as the live chat. Copies slide out of it one by one while the camera pulls back and turns;
+// then the camera dives through the wall and the messages burst out.
 const WIN = { cx: COLX + COLW / 2, cy: 545 };          // centre of the full-size window (header to bottom)
 const WALL = [...HISTORY, ...HISTORY, ...HISTORY];
-const CENTER = 2 * GRID.cols + 4;                       // the cell that is the original window
+const F = 1000;
+const SLOTS = (() => {
+  const out = [];
+  for (let r = 0; r < 5; r++) for (let c = 0; c < 10; c++) {
+    const i = r * 10 + c, X = (c - 4) * 980, Y = (r - 2) * 1180, Z = c === 4 && r === 2 ? 0 : (hash(i + 3) - .5) * 1600;
+    out.push({ i, X, Y, Z, main: c === 4 && r === 2, order: Math.hypot(c - 4, (r - 2) * 1.3) + hash(i) * .6 });
+  }
+  return out;
+})();
 
-function miniWindow(ctx, t, i, d, mainY) {
-  const c = i % GRID.cols, r = Math.floor(i / GRID.cols);
-  const cx = c * GRID.cw + GRID.cw / 2, cy = r * GRID.ch + GRID.ch / 2;
-  ctx.save();
-  ctx.translate(cx, cy); ctx.scale(GRID.s, GRID.s); ctx.translate(-WIN.cx, -WIN.cy);
-  // Window frame and header, so every copy reads as a chat window.
+// Camera over the wall section (d = seconds since TD): position, yaw and roll.
+function wallCam(d) {
+  const back = easeInOut(seg(d, .1, 1.8)), dive = seg(d, 1.6, 3.4) ** 2.2;
+  const z = -F * Math.exp(lerp(0, Math.log(7.5), back)) + dive * 9200;
+  return {
+    x: lerp(-(WIN.cx - W / 2), 600, back) - dive * 900,
+    y: lerp(-(WIN.cy - H / 2), -500, back) + dive * 700,
+    z, yaw: .38 * Math.sin(Math.PI * .5 * back) - dive * .25, roll: -.05 * back + .03 * dive,
+  };
+}
+function project(cam, X, Y, Z) {
+  const px = X - cam.x, pz = Z - cam.z, c = Math.cos(cam.yaw), s = Math.sin(cam.yaw);
+  const x = px * c - pz * s, z = px * s + pz * c, y = Y - cam.y;
+  if (z < 60) return null;
+  const k = F / z;
+  return { x: W / 2 + x * k, y: H / 2 + y * k, k, z };
+}
+
+function drawWindow(ctx, t, slot, d, mainY, a) {
+  ctx.save(); ctx.globalAlpha *= a;
+  // The original only gains its frame as the camera starts to pull back.
+  const fr = slot.main ? seg(d, .05, .6) : 1;
   roundRect(ctx, COLX - 40, 50, COLW + 80, BOT - 20, 30);
-  ctx.strokeStyle = 'rgba(237,232,228,.14)'; ctx.lineWidth = 5; ctx.stroke();
-  ctx.fillStyle = 'rgba(255,255,255,.015)'; ctx.fill();
-  label(ctx, '小 鹿', { t: 9, t0: 0, x: WIN.cx, y: 92, size: 22, align: 'center', color: COL.ink });
-  ctx.fillStyle = COL.line; ctx.fillRect(COLX, 116, COLW, 2);
+  ctx.fillStyle = `rgba(10,11,14,${.92 * fr})`; ctx.fill();
+  ctx.strokeStyle = `rgba(237,232,228,${.3 * fr})`; ctx.lineWidth = 4; ctx.stroke();
+  label(ctx, '小 鹿', { t: 9, t0: 0, x: WIN.cx, y: 92, size: 20, align: 'center', color: COL.ink });
+  ctx.fillStyle = COL.line; ctx.fillRect(COLX, 116, COLW, 1);
   ctx.beginPath(); ctx.rect(COLX - 40, 120, COLW + 80, BOT - 100); ctx.clip();
-  // Every copy pulls back through its history, faster and faster (older messages coming down from the top).
-  const v = i === CENTER ? 700 : 1300 + hash(i) * 900;
-  if (i === CENTER) chatColumn(ctx, { t, x: COLX, w: COLW, top: TOP, bot: BOT, items: CHAT, y0: mainY + v * d * d, fade: 60 });
-  else chatColumn(ctx, { t: 99, x: COLX, w: COLW, top: TOP, bot: BOT, items: WALL, y0: -50000 + hash(i + 40) * 9000 + v * d * d, fade: 60 });
+  // Every copy pulls back through its history, faster and faster.
+  const v = slot.main ? 650 : 1300 + hash(slot.i) * 900, run = Math.max(0, d - .5);
+  if (slot.main) chatColumn(ctx, { t, x: COLX, w: COLW, top: TOP, bot: BOT, items: CHAT, y0: mainY + v * run * run, fade: 80 });
+  else chatColumn(ctx, { t: 99, x: COLX, w: COLW, top: TOP, bot: BOT, items: WALL, y0: -50000 + hash(slot.i + 40) * 9000 + v * run * run, fade: 80 });
   ctx.restore();
 }
 
 function wall(ctx, t) {
-  const d = t - TD, k = easeInOut(seg(d, 0, 1.4));
-  const mainY = chatY(ctx, TD);
-  // Pull back from one window to the whole grid, then push in toward the centre.
-  const Z = Math.exp(lerp(Math.log(1 / GRID.s), 0, k));
-  const c = { x: 4 * GRID.cw + GRID.cw / 2, y: 2 * GRID.ch + GRID.ch / 2 };
-  const A = { x: lerp(WIN.cx, c.x, k), y: lerp(WIN.cy, c.y, k) };
-  const Zp = 1 + 1.4 * easeIn(seg(d, 1.5, 3.4));
+  const d = t - TD, cam = wallCam(d), mainY = chatY(ctx, TD);
+  const fade = 1 - seg(d, 2.7, 3.4);
   ctx.save();
-  ctx.translate(W / 2, H / 2); ctx.scale(Zp, Zp); ctx.translate(-W / 2, -H / 2);
-  ctx.translate(A.x, A.y); ctx.scale(Z, Z); ctx.translate(-c.x, -c.y);
-  ctx.globalAlpha *= 1 - seg(d, 2.6, 3.4);
-  for (let i = 0; i < GRID.cols * GRID.rows; i++) miniWindow(ctx, t, i, d, mainY);
+  ctx.translate(W / 2, H / 2); ctx.rotate(cam.roll); ctx.translate(-W / 2, -H / 2);
+  const drawn = [];
+  for (const sl of SLOTS) {
+    // Copies slide out of the original, nearest first.
+    const k = sl.main ? 1 : easeOut(seg(d, .25 + sl.order * .16, .85 + sl.order * .16));
+    if (k <= 0) continue;
+    const P = project(cam, sl.X * k, sl.Y * k, sl.Z * k);
+    if (!P) continue;
+    drawn.push({ sl, P, k });
+  }
+  drawn.sort((a, b) => b.P.z - a.P.z);
+  for (const { sl, P, k } of drawn) {
+    if (P.k * 900 < 8 || P.x < -P.k * 600 || P.x > W + P.k * 600 || P.y < -P.k * 700 || P.y > H + P.k * 700) continue;
+    const fog = clamp(1.25 - P.z / 9000) * seg(P.z, 60, 500);
+    ctx.save();
+    ctx.translate(P.x, P.y); ctx.scale(P.k, P.k); ctx.translate(-WIN.cx, -WIN.cy);
+    drawWindow(ctx, t, sl, d, mainY, fog * (sl.main ? 1 : seg(k, 0, .4)) * fade);
+    ctx.restore();
+  }
   ctx.restore();
 
-  // Brush-off replies burst out of the windows toward the camera.
+  // Brush-off replies burst out of the windows toward the camera as it dives in.
   for (let j = 0; j < 220; j++) {
-    const t0 = TD + 1.7 + hash(j) * 1.5, q = seg(t, t0, t0 + 1.3);
+    const t0 = TD + 1.9 + hash(j) * 1.5, q = seg(t, t0, t0 + 1.3);
     if (q <= 0 || q >= 1) continue;
-    const cell = Math.floor(hash(j + 9) * 50), cc = cell % GRID.cols, rr = Math.floor(cell / GRID.cols);
-    let sx = cc * GRID.cw + GRID.cw / 2 + (hash(j + 1) - .5) * 120, sy = rr * GRID.ch + GRID.ch / 2 + (hash(j + 2) - .5) * 150;
-    sx = W / 2 + (sx - W / 2) * Zp; sy = H / 2 + (sy - H / 2) * Zp;
-    const e = easeIn(q), x = sx + (sx - W / 2) * e * 1.5, y = sy + (sy - H / 2) * e * 1.5;
-    looseBubble(ctx, { who: hash(j + 3) < .5 ? 'me' : 'them', text: SHORT[j % SHORT.length] }, x, y, { s: .5 + e * 3.4, a: seg(q, 0, .12) * (1 - seg(q, .6, 1)) });
+    const sl = SLOTS[Math.floor(hash(j + 9) * 50)];
+    const P = project(wallCam(t0 - TD), sl.X + (hash(j + 1) - .5) * 600, sl.Y + (hash(j + 2) - .5) * 800, sl.Z);
+    if (!P) continue;
+    const e = easeIn(q), x = P.x + (P.x - W / 2) * e * 1.6, y = P.y + (P.y - H / 2) * e * 1.6;
+    looseBubble(ctx, { who: hash(j + 3) < .5 ? 'me' : 'them', text: SHORT[j % SHORT.length] }, x, y, { s: (.4 + P.k) * (1 + e * 3.4), a: seg(q, 0, .12) * (1 - seg(q, .6, 1)) });
   }
 }
 
@@ -274,7 +311,7 @@ function drawFrame(ctx, t) {
 function chatAct(ctx, t) {
   ctx.save(); ctx.globalAlpha = 1 - seg(t, T4 - .6, T4 + .3);
   backdrop(ctx, { t, cx: W * .3 });
-  const solo = 1 - seg(t, TD, TD + .25);
+  const solo = t < TD ? 1 : 0;   // the wall takes over with the original window in exactly the same place
   if (solo > 0) {
     const y0 = chatY(ctx, t), speed = Math.abs(y0 - chatY(ctx, t - 1 / 30)) * 30;
     const sw = swap(t), x = lerp(COLX, LEFTX, sw);
@@ -284,8 +321,9 @@ function chatAct(ctx, t) {
     header(ctx, t, x);
     // Motion trails while the history flies past.
     const trail = clamp(speed / 2500);
-    for (let g = 4; g >= 1 && trail > .05; g--) chatColumn(ctx, { t, x, w: COLW, top: TOP, bot: BOT, items: CHAT, y0: y0 + g * speed / 70, a: .13 * trail });
-    chatColumn(ctx, { t, x, w: COLW, top: TOP, bot: BOT, items: CHAT, y0 });
+    const items = t < T2 ? CHAT_DAY1 : CHAT;     // the history only exists once the scroll starts
+    for (let g = 4; g >= 1 && trail > .05; g--) chatColumn(ctx, { t, x, w: COLW, top: TOP, bot: BOT, items, y0: y0 + g * speed / 70, a: .13 * trail });
+    chatColumn(ctx, { t, x, w: COLW, top: TOP, bot: BOT, items, y0 });
     narration(ctx, t, stampAt(ctx, y0, t));
     ctx.restore();
   }
@@ -300,8 +338,7 @@ const CUES = (() => {
   const c = [];
   DAY1.forEach(([at]) => c.push({ t: at, kind: 'send' }));
   LATE.forEach(([at]) => c.push({ t: at, kind: 'send', gain: .9 }));
-  c.push({ t: TD + .1, kind: 'whoosh' });
-  c.push({ t: TD + 1.75, kind: 'boom' }, { t: TD + 1.8, kind: 'shimmer' });
+  c.push({ t: TD + 1.95, kind: 'boom' }, { t: TD + 2.0, kind: 'shimmer' });
   c.push({ t: T4 - .3, kind: 'swell', dur: 6.0 });
   c.push({ t: T4 + 7.6, kind: 'note', f: 220 });
   return c.sort((a, b) => a.t - b.t);
