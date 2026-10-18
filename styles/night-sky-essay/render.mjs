@@ -76,7 +76,7 @@ if (args.sheet) {
     }));
     const out = outPath(`${CUT}.mp4`);
     await run('ffmpeg', ['-y', '-loglevel', 'error', '-framerate', String(fps), '-i', `${dir}/f%05d.jpg`, '-i', wav,
-      '-map', '0:v', '-map', '1:a', '-c:v', 'libx264', '-preset', 'slow', '-crf', '18', '-pix_fmt', 'yuv420p',
+      '-map', '0:v', '-map', '1:a', '-c:v', 'libx264', '-preset', 'slow', '-crf', '22', '-pix_fmt', 'yuv420p',
       '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', '-shortest', out]);
     rmSync(dir, { recursive: true, force: true });
     console.log('wrote ' + out);
