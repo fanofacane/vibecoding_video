@@ -4,7 +4,7 @@
 // Horizontal and vertical text are mixed so the frame is never just one line.
 
 // Laid out on a 16 s timeline (TL) and played back in 5 s.
-const TL_DUR = 16.0, DUR = 5.0, SPEED = TL_DUR / DUR;
+const TL_DUR = 16.0, DUR = 8.0, SPEED = TL_DUR / DUR;
 const BLUE = '#3d6cf0';
 
 // ---------------------------------------------------------------- helpers
@@ -101,15 +101,14 @@ function page1(ctx, t) {
 }
 
 // The settled columns stay on screen through the wipe; on page 2 they shrink a little and pack to the right.
-const COLS_X2 = [1790, 1650, 1510, 1370];
+const COLS_X2 = [1790, 1640, 1490, 1340];
 function columns(ctx, t) {
   const m = easeInOut(seg(t, 8.9, 9.9));
   WORDS.forEach((w, i) => {
     const b = BEATS[i];
     if (t <= b + .62) return;
-    const older = BEATS.filter(x => x > b && t > x + .62).length;
-    const a = lerp(1 - .45 * clamp(older / 2), .55, m);
-    vtext(ctx, w, lerp(COLS_X[i], COLS_X2[i], m), lerp(150, 210, m), lerp(150, 120, m), i === 2 ? BLUE : COL.ink, a);
+    // Fully visible the whole time: these words stay on the page.
+    vtext(ctx, w, lerp(COLS_X[i], COLS_X2[i], m), lerp(150, 200, m), lerp(150, 134, m), i === 2 ? BLUE : COL.ink, 1, null, 'rgba(237,232,228,.25)');
   });
 }
 
@@ -171,6 +170,6 @@ const CUES = [
   { t: WIPE1[0] / SPEED, kind: 'whoosh' }, { t: 11.0 / SPEED, kind: 'whoosh' },
   { t: 11.7 / SPEED, kind: 'chord', notes: [146.8, 220, 293.7, 370] },
 ];
-const PAD = [[.05, [87.3, 130.8, 220]], [2.8, [110, 164.8, 261.6, 329.6]]];
+const PAD = [[.05, [87.3, 130.8, 220]], [3.0, [98, 146.8, 246.9, 293.7]], [5.2, [110, 164.8, 261.6, 329.6]]];
 
 const CUT = { dur: DUR, cues: CUES, pad: PAD, drawFrame };
