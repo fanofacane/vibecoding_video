@@ -6,7 +6,7 @@
 //   node render.mjs --encode [--out=out/pdoom.mp4]                               frames + song → MP4
 //   node render.mjs --loop=recursion [--out=out/loop_recursion]                 one cycle of a standalone loop (PNGs)
 //   (--loop also works with --sheet, where the times are loop time)
-//   --page=works/<name>/page.html renders another page of this style instead of studio.html
+//   --page=<file>.html renders another page of this style instead of studio.html
 //   --no-sandbox passes Chrome's --no-sandbox (needed when running as root, e.g. in Linux containers)
 //   --angle=d3d11|gl|vulkan|swiftshader overrides the WebGL backend (default: d3d11 on Windows, Chrome's choice elsewhere)
 import puppeteer from 'puppeteer-core';
