@@ -73,3 +73,43 @@ function dailyCups(ctx, o) {
   }
   ctx.restore();
 }
+
+// A big jar that fills slowly over months; the things saved up float out of it as chips.
+// o: { t, t0, t1 (filling), cx, y (jar bottom), items: [text], itemsAt (first chip time), label }
+function storyJar(ctx, o) {
+  const t = o.t, jw = 260, jh = 300, x = o.cx - jw / 2, fill = easeInOut(seg(t, o.t0, o.t1)) * (jh - 16);
+  const appear = seg(t, o.t0 - .6, o.t0);
+  if (appear <= 0) return;
+  ctx.save(); ctx.globalAlpha *= appear;
+  // Liquid, with a faint line for every passing week.
+  const g = ctx.createLinearGradient(0, o.y - fill, 0, o.y);
+  g.addColorStop(0, rgba(COL.warm, .85)); g.addColorStop(1, rgba(COL.warm, .35));
+  ctx.fillStyle = g; ctx.fillRect(x + 6, o.y - fill, jw - 12, fill - 3);
+  ctx.fillStyle = 'rgba(6,7,9,.35)';
+  for (let i = 1; i < 12; i++) { const ly = o.y - i * (jh - 16) / 12; if (o.y - ly < fill) ctx.fillRect(x + 6, ly, jw - 12, 1.5); }
+  // Glass.
+  ctx.strokeStyle = rgba(COL.ink, .75); ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(x - 6, o.y - jh); ctx.lineTo(x, o.y); ctx.lineTo(x + jw, o.y); ctx.lineTo(x + jw + 6, o.y - jh); ctx.stroke();
+  // A drop now and then.
+  for (let i = 0; i < 9; i++) {
+    const d0 = o.t0 + i * (o.t1 - o.t0) / 9, k = seg(t, d0, d0 + .5);
+    if (k > 0 && k < 1) drop(ctx, o.cx, lerp(o.y - jh - 260, o.y - fill - 6, easeIn(k)), 8);
+  }
+  // Chips float up out of the jar and settle in an arc above it.
+  (o.items || []).forEach((txt, i) => {
+    const k = easeOut(seg(t, o.itemsAt + i * .35, o.itemsAt + i * .35 + .7));
+    if (k <= 0) return;
+    const ang = -Math.PI / 2 + (i - (o.items.length - 1) / 2) * .42;
+    const tx = o.cx + Math.cos(ang) * 330, ty = o.y - jh / 2 + Math.sin(ang) * 300;
+    const px = lerp(o.cx, tx, k), py = lerp(o.y - fill, ty, k);
+    ctx.save(); ctx.globalAlpha *= k;
+    ctx.font = `400 26px ${SANS}`;
+    const tw = ctx.measureText(txt).width + 34;
+    roundRect(ctx, px - tw / 2, py - 24, tw, 48, 8);
+    ctx.shadowColor = 'rgba(243,217,166,.4)'; ctx.shadowBlur = 20;
+    ctx.fillStyle = COL.me; ctx.fill(); ctx.shadowBlur = 0;
+    ctx.fillStyle = COL.meText; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(txt, px, py + 1);
+    ctx.restore();
+  });
+  ctx.restore();
+}

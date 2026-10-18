@@ -17,7 +17,7 @@
 
 | 作品 | 内容 | 目录 |
 | --- | --- | --- |
-| 《留白》 | 为什么最亲的人话越来越少，普通朋友却总有得聊？恋人和普通朋友的聊天记录对比。目前完成 30 秒样片 | [works/liubai/](works/liubai/) |
+| 《留白》 | 为什么最亲的人话越来越少，普通朋友却总有得聊？恋人和普通朋友的聊天记录对比。成片 3 分 04 秒（`film`），另有样片（`sample`） | [works/liubai/](works/liubai/) |
 
 分镜脚本见 [creative_materials/2026-10-18_留白_分镜草案/分镜脚本.md](../../creative_materials/2026-10-18_留白_分镜草案/分镜脚本.md)。
 
@@ -52,7 +52,8 @@ npm ci
 node tools/fetch-fonts.mjs --work=liubai              # 改过文字后重新运行
 node render.mjs --work=liubai --cut=sample --sheet=4.5,13.4,21.8,28.4   # 拼图 → out/liubai/sample/sheet.jpg
 node render.mjs --work=liubai --cut=sample --stills=21.8                # 静帧
-node render.mjs --work=liubai --cut=sample --video                      # 成片 → out/liubai/sample/sample.mp4
+node render.mjs --work=liubai --cut=sample --video                      # 样片 → out/liubai/sample/sample.mp4
+node render.mjs --work=liubai --cut=film --video --workers=6            # 成片 → out/liubai/film/film.mp4
 ```
 
 也可以用浏览器打开 `studio.html?work=liubai&cut=sample` 拖动预览（没有声音）。每帧只由时间决定，不要使用 `Math.random()`，需要随机时用 `hash(i)`。
