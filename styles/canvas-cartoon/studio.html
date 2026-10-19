@@ -1,0 +1,66 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Canvas cartoon studio</title>
+<style>
+  @font-face { font-family: "KuaiLe"; src: url("assets/fonts/ZCOOLKuaiLe-Regular.ttf") format("truetype"); font-display: block; }
+  html, body { margin: 0; background: #1a1614; color: #ddd; font: 13px system-ui, sans-serif; }
+  main { padding: 12px; display: grid; gap: 8px; }
+  #out { width: min(100%, 1280px); aspect-ratio: 16 / 9; height: auto; background: #000; }
+  .bar { display: flex; gap: 10px; align-items: center; max-width: 1280px; }
+  #scrub { flex: 1; }
+  #tt { font-variant-numeric: tabular-nums; min-width: 120px; }
+</style>
+</head>
+<body>
+<main>
+  <canvas id="out" width="1920" height="1080"></canvas>
+  <div class="bar"><button id="play">▶</button><input id="scrub" type="range" min="0" step="0.0333" value="0"><span id="tt">loading…</span></div>
+</main>
+<script src="src/util.js"></script>
+<script src="src/clawd.js"></script>
+<script src="src/human.js"></script>
+<script src="src/world.js"></script>
+<script src="src/screens.js"></script>
+<script src="src/film.js"></script>
+<script src="src/shots_a.js"></script>
+<script src="src/shots_b.js"></script>
+<script src="src/shots_c.js"></script>
+<script>
+  const cv = document.getElementById('out'), cx = cv.getContext('2d');
+  const scrub = document.getElementById('scrub'), tt = document.getElementById('tt'), play = document.getElementById('play');
+  scrub.max = DURATION;
+  const show = t => { drawFrame(cx, t); tt.textContent = `${t.toFixed(2)} / ${DURATION.toFixed(2)} s`; };
+
+  // Offline renderer API (render.mjs).
+  window.DURATION = DURATION;
+  window.CUES = CUES;
+  window.MUSIC = MUSIC;
+  window.renderAt = (t, type = 'image/jpeg', q = .92) => { drawFrame(cx, t); return cv.toDataURL(type, q); };
+  window.renderSheet = (ts, cols, w) => {
+    const h = w * 9 / 16, rows = Math.ceil(ts.length / cols), sh = document.createElement('canvas');
+    sh.width = cols * w; sh.height = rows * h;
+    const s = sh.getContext('2d'), ms = [];
+    ts.forEach((t, i) => {
+      const t0 = performance.now(); drawFrame(cx, t); ms.push(Math.round(performance.now() - t0));
+      s.drawImage(cv, (i % cols) * w, Math.floor(i / cols) * h, w, h);
+      s.fillStyle = 'rgba(0,0,0,.6)'; s.fillRect((i % cols) * w, Math.floor(i / cols) * h, 74, 24);
+      s.fillStyle = '#fff'; s.font = '16px monospace'; s.fillText(t.toFixed(2) + 's', (i % cols) * w + 6, Math.floor(i / cols) * h + 17);
+    });
+    return { url: sh.toDataURL('image/jpeg', .9), ms };
+  };
+
+  let playing = false, startT = 0, startClock = 0;
+  play.onclick = () => { playing = !playing; play.textContent = playing ? '❚❚' : '▶'; startT = +scrub.value; startClock = performance.now(); if (playing) tick(); };
+  const tick = () => {
+    if (!playing) return;
+    const t = startT + (performance.now() - startClock) / 1000;
+    if (t >= DURATION) { playing = false; play.textContent = '▶'; return; }
+    scrub.value = t; show(t); requestAnimationFrame(tick);
+  };
+  scrub.oninput = () => show(+scrub.value);
+  document.fonts.load('40px KuaiLe', '爱的说明书').then(() => document.fonts.ready).then(() => { show(0); window.ready = true; });
+</script>
+</body>
+</html>

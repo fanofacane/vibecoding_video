@@ -1,0 +1,10 @@
+{
+  "name": "canvas-cartoon",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pure Canvas 2D cartoon: Clawd loves a human through the smart home.",
+  "type": "module",
+  "dependencies": {
+    "puppeteer-core": "^25.11.0"
+  }
+}

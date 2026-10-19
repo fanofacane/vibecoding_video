@@ -9,6 +9,7 @@
 | 情景喜剧群聊风 · `sitcom-flat` | 《爱情公寓》式扁平卡通片头、Logo 当角色、角色介绍卡、手机群聊段子、按歌词卡点剪辑 | 《AI 甄嬛传》第一集《朕只是想改个标题》 | [风格说明](styles/sitcom-flat/README.md) · [制作规范](styles/sitcom-flat/STYLE_GUIDE.md) |
 | 水彩墨线手绘动画 · `watercolor-ink` | 纸张纹理、水彩晕染、手绘墨线、角色表演、连续分镜 | Clawd 音乐视频《I'm Upping My P(doom)》 | [风格说明与制作流程](styles/watercolor-ink/README.md) |
 | 像素终端对话 · `pixel-terminal` | 暗色终端双栏聊天、像素 Clawd、逐字打字、上下文进度条与压缩、科普卡 | 双 Clawd 短片《没有昨天》 | [风格说明与制作流程](styles/pixel-terminal/README.md) |
+| Canvas 手绘卡通 · `canvas-cartoon` | 纯 Canvas 2D、抖动墨线、剖面娃娃屋公寓、设备特写、代码合成配乐 | Clawd 短片《学会爱的一百种笨办法》 | [风格说明与制作流程](styles/canvas-cartoon/README.md) |
 
 风格以视觉语言命名。Clawd 是当前示例的角色，P(doom) 是当前作品的主题，均不作为风格分类标准。
 
@@ -49,6 +50,15 @@ styles/
     cover.html            横屏和竖屏封面
     showcase/             成片与封面
     references/           参考截图与早期提案
+  canvas-cartoon/          Canvas 手绘卡通（纯 Canvas 2D）
+    README.md             风格定义、文件导航与导出命令
+    STORYBOARD.md         《学会爱的一百种笨办法》分镜
+    src/                  绘图工具、Clawd、人物、公寓与家电、屏幕 UI、镜头
+    studio.html           浏览器预览与渲染页面
+    render.mjs            拼图、静帧、片段、整片渲染入口
+    audio.mjs             合成配乐与音效
+    assets/fonts/         站酷快乐体（OFL）
+    showcase/             成片与缩略图
 creative_materials/       尚未归入具体制作风格的调研与创意资料
 ```
 
